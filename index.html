@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkillBridge PH — AI Career Ecosystem</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:  { DEFAULT: '#1F4E79', 50: '#EEF4FB', 100: '#D5E6F5', 600: '#2563AB', 700: '#1A4268', 800: '#163856', dark: '#122F48' },
+            teal:  { DEFAULT: '#1D9E75', 50: '#E8F8F2', 100: '#C5EEE0', 600: '#17865F', 700: '#116649' },
+            sky:   { DEFAULT: '#2E75B6', 50: '#EAF3FB', 100: '#C5DDEE' },
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #F5F7FA; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
+
+    @keyframes pulse-dot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .5; transform: scale(1.3); } }
+    @keyframes shimmer { from { background-position: -600px 0; } to { background-position: 600px 0; } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .pulse-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
+    .fade-in { animation: fadeIn .3s ease both; }
+
+    .card-hover { transition: transform .18s ease, box-shadow .18s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(31,78,121,.1); }
+
+    .btn { transition: filter .15s ease, transform .1s ease; }
+    .btn:hover { filter: brightness(1.08); }
+    .btn:active { transform: scale(.97); }
+
+    .sidebar-item { transition: background .15s, color .15s; }
+    .sidebar-item:hover { background: rgba(255,255,255,.08); }
+
+    .credly-badge { background: linear-gradient(135deg,#FF6B2B 0%,#FF8C42 100%); }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useRef } = React;
+
+/* ══════════════════════ DESIGN TOKENS ══════════════════════ */
+const C = {
+  navy:    '#1F4E79',
+  navyDk:  '#163856',
+  teal:    '#1D9E75',
+  tealLt:  '#E8F8F2',
+  sky:     '#2E75B6',
+  skyLt:   '#EAF3FB',
+  warn:    '#F59E0B',
+  warnLt:  '#FFFBEB',
+  danger:  '#EF4444',
+  gray:    '#6B7280',
+  grayLt:  '#F3F4F6',
+  green:   '#10B981',
+  greenLt: '#ECFDF5',
+};
+
+/* ══════════════════════ ICON LIBRARY ══════════════════════ */
+const Ico = {
+  Home:     <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg>,
+  Map:      <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M12 1.586l-4 4v12.828l4-4V1.586zM3.707 3.293A1 1 0 002 4v10a1 1 0 00.293.707L6 18.414V5.586L3.707 3.293zM17.707 5.293L14 1.586v12.828l2.293 2.293A1 1 0 0018 16V6a1 1 0 00-.293-.707z" clipRule="evenodd"/></svg>,
+  Book:     <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg>,
+  Shield:   <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>,
+  Brief:    <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd"/><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.487-.46-8-1.308z"/></svg>,
+  Person:   <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/></svg>,
+  Gear:     <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd"/></svg>,
+  Bell:     <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/></svg>,
+  Check:    <svg viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M12.416 3.376a.75.75 0 01.208 1.04l-5 7.5a.75.75 0 01-1.154.114l-3-3a.75.75 0 011.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 011.04-.207z" clipRule="evenodd"/></svg>,
+  Lock:     <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd"/></svg>,
+  Clock:    <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/></svg>,
+  Star:     <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>,
+  Share:    <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z"/></svg>,
+  Link:     <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd"/></svg>,
+  Warn:     <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"/></svg>,
+  Spark:    <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clipRule="evenodd"/></svg>,
+  Loc:      <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/></svg>,
+  Chevron:  <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/></svg>,
+};
+
+/* ══════════════════════ PRIMITIVE COMPONENTS ══════════════════════ */
+
+const Avatar = ({ initials = 'MR', size = 40, bg = C.navy, textSize = 14 }) => (
+  <div style={{ width: size, height: size, borderRadius: '50%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: textSize, flexShrink: 0, letterSpacing: '.5px' }}>
+    {initials}
+  </div>
+);
+
+const Pill = ({ children, color, bg, size = 'sm' }) => (
+  <span style={{ color, background: bg, borderRadius: 99, padding: size === 'xs' ? '2px 8px' : '3px 10px', fontSize: size === 'xs' ? 10 : 11, fontWeight: 700, letterSpacing: '.3px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+    {children}
+  </span>
+);
+
+const Bar = ({ pct, color = C.teal, height = 8, bg = '#E5E7EB', radius = 99 }) => (
+  <div style={{ width: '100%', height, background: bg, borderRadius: radius, overflow: 'hidden' }}>
+    <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: radius, transition: 'width .6s cubic-bezier(.4,0,.2,1)' }} />
+  </div>
+);
+
+const Stars = ({ n, total = 5, color = C.warn }) =>
+  Array.from({ length: total }, (_, i) => (
+    <span key={i} style={{ color: i < n ? color : '#D1D5DB' }}>{Ico.Star}</span>
+  ));
+
+const CredlyBadge = () => (
+  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'linear-gradient(135deg,#FF6B2B,#FF8C42)', color: '#fff', borderRadius: 6, padding: '2px 8px', fontSize: 10, fontWeight: 800, letterSpacing: '.4px' }}>
+    ✦ CREDLY VERIFIED
+  </span>
+);
+
+/* Circular SVG progress ring */
+const Ring = ({ pct, size = 120, stroke = 9, color = C.teal, bg = '#E5E7EB', children }) => {
+  const r = (size - stroke) / 2;
+  const circ = 2 * Math.PI * r;
+  const dash = circ * (1 - pct / 100);
+  return (
+    <div style={{ position: 'relative', width: size, height: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <svg width={size} height={size} style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(-90deg)' }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={bg} strokeWidth={stroke} />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
+          strokeDasharray={circ} strokeDashoffset={dash} strokeLinecap="round"
+          style={{ transition: 'stroke-dashoffset .8s cubic-bezier(.4,0,.2,1)' }} />
+      </svg>
+      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>{children}</div>
+    </div>
+  );
+};
+
+const Card = ({ children, className = '', style = {}, hover = true }) => (
+  <div className={`${hover ? 'card-hover' : ''} ${className}`}
+    style={{ background: '#fff', borderRadius: 16, border: '1px solid #E9EEF4', boxShadow: '0 1px 4px rgba(0,0,0,.05)', overflow: 'hidden', ...style }}>
+    {children}
+  </div>
+);
+
+const SectionHeader = ({ title, subtitle, action }) => (
+  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
+    <div>
+      <h2 style={{ fontSize: 20, fontWeight: 800, color: '#111827', letterSpacing: '-.3px' }}>{title}</h2>
+      {subtitle && <p style={{ fontSize: 13, color: C.gray, marginTop: 3 }}>{subtitle}</p>}
+    </div>
+    {action}
+  </div>
+);
+
+const TopBar = ({ title, subtitle, right }) => (
+  <div style={{ background: '#fff', borderBottom: '1px solid #E9EEF4', padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 20, boxShadow: '0 1px 3px rgba(0,0,0,.04)' }}>
+    <div>
+      <div style={{ fontSize: 17, fontWeight: 800, color: '#111827', letterSpacing: '-.2px' }}>{title}</div>
+      {subtitle && <div style={{ fontSize: 12, color: C.gray, marginTop: 1 }}>{subtitle}</div>}
+    </div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      {right}
+      <button style={{ position: 'relative', width: 36, height: 36, borderRadius: 10, background: '#F8FAFC', border: '1px solid #E9EEF4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.gray, cursor: 'pointer' }} className="btn">
+        {Ico.Bell}
+        <span style={{ position: 'absolute', top: 7, right: 7, width: 7, height: 7, borderRadius: '50%', background: '#EF4444', border: '1.5px solid #fff' }} />
+      </button>
+      <Avatar initials="MR" size={36} bg={C.teal} textSize={12} />
+    </div>
+  </div>
+);
+
+/* ══════════════════════ SIDEBAR ══════════════════════ */
+const NAV = [
+  { id: 'dashboard',   label: 'Dashboard',     icon: Ico.Home   },
+  { id: 'careermap',   label: 'Career Map',     icon: Ico.Map    },
+  { id: 'modules',     label: 'Learning',       icon: Ico.Book   },
+  { id: 'credentials', label: 'Credentials',    icon: Ico.Shield },
+  { id: 'jobs',        label: 'Job Matches',    icon: Ico.Brief  },
+];
+const NAV_BOTTOM = [
+  { id: 'profile',  label: 'Profile',  icon: Ico.Person },
+  { id: 'settings', label: 'Settings', icon: Ico.Gear   },
+];
+
+function Sidebar({ active, onNav }) {
+  return (
+    <div style={{ width: 232, minHeight: '100vh', background: C.navy, display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+
+      {/* Brand */}
+      <div style={{ padding: '20px 18px 16px', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: C.teal, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#fff', fontSize: 13, letterSpacing: '-.5px', flexShrink: 0 }}>SB</div>
+          <div>
+            <div style={{ color: '#fff', fontWeight: 900, fontSize: 15, letterSpacing: '-.3px', lineHeight: 1 }}>SkillBridge</div>
+            <div style={{ color: C.teal, fontSize: 9, fontWeight: 800, letterSpacing: '1.8px', marginTop: 2 }}>PHILIPPINES</div>
+          </div>
+        </div>
+      </div>
+
+      {/* User card */}
+      <div style={{ padding: '14px 14px 12px', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
+        <div style={{ background: 'rgba(255,255,255,.07)', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Avatar initials="MR" size={36} bg={C.teal} textSize={12} />
+          <div style={{ minWidth: 0 }}>
+            <div style={{ color: '#fff', fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Maria Reyes</div>
+            <div style={{ color: '#93C5FD', fontSize: 11, marginTop: 1 }}>Customer Service · L3</div>
+          </div>
+          <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+            <div style={{ background: C.teal, borderRadius: 6, padding: '1px 6px', color: '#fff', fontSize: 9, fontWeight: 800, letterSpacing: '.5px' }}>35% ↑</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main nav */}
+      <nav style={{ flex: 1, padding: '10px 10px' }}>
+        {NAV.map(n => {
+          const on = active === n.id;
+          return (
+            <button key={n.id} onClick={() => onNav(n.id)} className="sidebar-item"
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 10, marginBottom: 2, cursor: 'pointer', border: 'none', textAlign: 'left', background: on ? 'rgba(29,158,117,.25)' : 'transparent', color: on ? '#fff' : 'rgba(255,255,255,.6)', fontWeight: on ? 700 : 500, fontSize: 13, fontFamily: 'inherit', position: 'relative' }}>
+              <span style={{ color: on ? C.teal : 'rgba(255,255,255,.5)', flexShrink: 0 }}>{n.icon}</span>
+              {n.label}
+              {on && <span style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', width: 3, height: 18, borderRadius: '0 3px 3px 0', background: C.teal }} />}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Bottom nav */}
+      <div style={{ padding: '8px 10px 6px', borderTop: '1px solid rgba(255,255,255,.08)' }}>
+        {NAV_BOTTOM.map(n => {
+          const on = active === n.id;
+          return (
+            <button key={n.id} onClick={() => onNav(n.id)} className="sidebar-item"
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, marginBottom: 2, cursor: 'pointer', border: 'none', textAlign: 'left', background: on ? 'rgba(29,158,117,.2)' : 'transparent', color: on ? '#fff' : 'rgba(255,255,255,.5)', fontWeight: 500, fontSize: 13, fontFamily: 'inherit' }}>
+              <span style={{ color: on ? C.teal : 'rgba(255,255,255,.4)' }}>{n.icon}</span>
+              {n.label}
+            </button>
+          );
+        })}
+        {/* XP strip */}
+        <div style={{ marginTop: 10, padding: '10px 10px 12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'rgba(255,255,255,.45)', fontSize: 10, marginBottom: 5 }}>
+            <span>280 XP earned</span><span>500 XP goal</span>
+          </div>
+          <Bar pct={56} color={C.teal} height={4} bg="rgba(255,255,255,.12)" />
+          <div style={{ color: 'rgba(255,255,255,.25)', fontSize: 9, marginTop: 8, textAlign: 'center', letterSpacing: '.5px' }}>TESDA ACCREDITED PARTNER</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════ SCREEN 1 — DASHBOARD ══════════════════════ */
+const COMPETENCIES = [
+  { name: 'Communication',  pct: 88, color: C.teal },
+  { name: 'SQL',            pct: 42, color: C.sky  },
+  { name: 'Python',         pct: 28, color: '#8B5CF6' },
+  { name: 'Data Analytics', pct: 38, color: '#F59E0B' },
+  { name: 'Cybersecurity',  pct: 15, color: '#EF4444' },
+];
+
+function Dashboard() {
+  return (
+    <div className="fade-in">
+      <TopBar title="Dashboard" subtitle="Martes, Abril 1, 2026" />
+
+      <div style={{ padding: '24px 28px', maxWidth: 1080 }}>
+
+        {/* Hero greeting */}
+        <div style={{ borderRadius: 18, background: `linear-gradient(130deg,${C.navy} 0%,#1B6B58 100%)`, padding: '28px 32px', color: '#fff', marginBottom: 20, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', right: -30, top: -30, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,.04)' }} />
+          <div style={{ position: 'absolute', right: 60, bottom: -40, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,.03)' }} />
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <span style={{ background: 'rgba(29,158,117,.4)', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700, color: '#5EEAD4' }}>AI-POWERED ECOSYSTEM</span>
+              </div>
+              <h1 style={{ fontSize: 26, fontWeight: 900, letterSpacing: '-.4px', lineHeight: 1.15, marginBottom: 8 }}>Maligayang pagdating, Maria! 👋</h1>
+              <p style={{ fontSize: 14, color: 'rgba(255,255,255,.75)', maxWidth: 480, lineHeight: 1.6 }}>You are <strong style={{ color: '#5EEAD4' }}>35%</strong> toward your Data Analyst certification. Keep going — <em>kaya mo!</em></p>
+              <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+                {['🔥 7-day streak','⚡ 280 XP this week','🏅 2 badges earned','🎯 Checkpoint in 3 days'].map(t => (
+                  <span key={t} style={{ background: 'rgba(255,255,255,.12)', borderRadius: 8, padding: '5px 10px', fontSize: 12, fontWeight: 600, backdropFilter: 'blur(6px)' }}>{t}</span>
+                ))}
+              </div>
+            </div>
+            <Avatar initials="MR" size={72} bg="rgba(255,255,255,.15)" textSize={22} />
+          </div>
+        </div>
+
+        {/* ⚠️ Checkpoint Alert */}
+        <div style={{ background: C.warnLt, border: `1.5px solid #FDE68A`, borderRadius: 12, padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <span style={{ color: C.warn, flexShrink: 0, marginTop: 1 }}>{Ico.Warn}</span>
+          <div style={{ flex: 1 }}>
+            <span style={{ fontWeight: 800, color: '#92400E', fontSize: 13 }}>Validation Assessment Due in 3 Days</span>
+            <span style={{ color: '#78350F', fontSize: 13 }}> — M1 Excel Fundamentals checkpoint. Complete your review before April 4 to unlock Module 2.</span>
+          </div>
+          <button className="btn" style={{ flexShrink: 0, background: C.warn, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Prepare Now</button>
+        </div>
+
+        {/* Row 1: Skill Profile + Pathway */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 16, marginBottom: 16 }}>
+
+          {/* Skill Profile Card */}
+          <Card style={{ padding: 22 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ fontWeight: 800, fontSize: 14, color: '#111827' }}>Skill Profile</div>
+              <Pill color={C.teal} bg={C.tealLt} size="xs">Updated today</Pill>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18 }}>
+              <Ring pct={72} size={96} stroke={8} color={C.teal}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: C.navy }}>72%</div>
+                  <div style={{ fontSize: 9, color: C.gray, fontWeight: 600, letterSpacing: '.5px' }}>COMPLETE</div>
+                </div>
+              </Ring>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, color: C.gray, marginBottom: 8 }}>Profile Completeness</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <Pill color={C.teal} bg={C.tealLt} size="xs">✦ 3 certs imported via Credly</Pill>
+                  <Pill color={C.sky} bg={C.skyLt} size="xs">AI-assessed</Pill>
+                </div>
+              </div>
+            </div>
+            {COMPETENCIES.map(c => (
+              <div key={c.name} style={{ marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{c.name}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: c.color }}>{c.pct}%</span>
+                </div>
+                <Bar pct={c.pct} color={c.color} height={6} />
+              </div>
+            ))}
+            <button className="btn" style={{ marginTop: 12, width: '100%', border: `1.5px solid ${C.navy}`, background: 'transparent', color: C.navy, borderRadius: 10, padding: '9px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              View Full Assessment {Ico.Chevron}
+            </button>
+          </Card>
+
+          {/* Active Pathway */}
+          <Card style={{ padding: 22, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <Pill color={C.teal} bg={C.tealLt} size="xs">⭐ ACTIVE PATHWAY</Pill>
+              <span style={{ fontSize: 24, fontWeight: 900, color: C.teal }}>35%</span>
+            </div>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: '#111827', marginBottom: 3 }}>Customer Service Agent → Data Analyst</h3>
+            <p style={{ fontSize: 12, color: C.gray, marginBottom: 14 }}>Est. completion: September 2026 · 5 months remaining</p>
+            <Bar pct={35} color={C.teal} height={10} />
+
+            {/* Step tracker */}
+            <div style={{ display: 'flex', gap: 4, marginTop: 12, flexWrap: 'wrap' }}>
+              {Array.from({ length: 6 }, (_, i) => (
+                <div key={i} style={{ flex: 1, minWidth: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, background: i === 0 ? C.teal : i === 1 ? C.sky : '#E5E7EB', color: i <= 1 ? '#fff' : '#9CA3AF', position: 'relative' }}>
+                  {i < 1 ? Ico.Check : `M${i+1}`}
+                  {i === 1 && <span className="pulse-dot" style={{ position: 'absolute', top: -3, right: -3, width: 8, height: 8, borderRadius: '50%', background: C.sky, border: '1.5px solid #fff' }} />}
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 10, color: '#9CA3AF' }}>
+              <span>1 Completed</span><span>1 In Progress</span><span>4 Locked</span>
+            </div>
+
+            {/* Milestone banner */}
+            <div style={{ marginTop: 14, background: `linear-gradient(90deg,${C.tealLt},#EEF6FB)`, border: `1px solid #C5EEE0`, borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 20 }}>🎯</span>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.navy }}>Next Milestone: SQL Fundamentals Badge</div>
+                <div style={{ fontSize: 11, color: C.gray, marginTop: 1 }}>Complete M2 + pass checkpoint to unlock</div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Row 2: Next Module + Quick Stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 16 }}>
+
+          {/* Next Module */}
+          <Card style={{ padding: 22 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+              <div style={{ width: 50, height: 50, borderRadius: 14, background: C.skyLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg style={{ width: 24, height: 24, color: C.sky }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <Pill color={C.sky} bg={C.skyLt} size="xs">IN PROGRESS</Pill>
+                  <span style={{ fontSize: 11, color: '#9CA3AF' }}>Module 2 of 6</span>
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#111827', marginBottom: 3 }}>M2 – Introduction to SQL</div>
+                <div style={{ fontSize: 12, color: C.gray, marginBottom: 10 }}>SELECT, WHERE, JOINs, aggregation functions · Credly badge upon completion</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: C.gray }}>{Ico.Clock} 25 minutes</span>
+                  <span style={{ fontSize: 12, color: C.gray }}>Week 1 of 2</span>
+                </div>
+                <Bar pct={20} color={C.sky} height={6} />
+                <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 3 }}>20% complete</div>
+              </div>
+              <button className="btn" style={{ flexShrink: 0, background: C.teal, color: '#fff', border: 'none', borderRadius: 10, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                Continue Learning →
+              </button>
+            </div>
+          </Card>
+
+          {/* Quick stats */}
+          <Card style={{ padding: 20 }}>
+            <div style={{ fontWeight: 800, fontSize: 14, color: '#111827', marginBottom: 14 }}>This Week</div>
+            {[
+              { label: 'Hours Learned', value: '4.5h', emoji: '📚', color: C.teal },
+              { label: 'Modules Completed', value: '1', emoji: '✅', color: C.sky },
+              { label: 'XP Earned', value: '280', emoji: '⚡', color: '#F59E0B' },
+              { label: 'AI Coach Sessions', value: '3', emoji: '🤖', color: '#8B5CF6' },
+            ].map(s => (
+              <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 11 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{s.emoji}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, color: C.gray }}>{s.label}</div>
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: s.color }}>{s.value}</div>
+              </div>
+            ))}
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════ SCREEN 2 — CAREER MAP ══════════════════════ */
+const PATHS = [
+  {
+    to: 'Data Analyst', duration: '6–9 months', gap: 62, stars: 3,
+    tag: '⭐ Recommended', tagC: C.teal, tagBg: C.tealLt,
+    btnC: C.teal, salary: '₱35K–₱55K/mo',
+    demand: 'High Demand', demandC: C.teal,
+    desc: 'Leverage BPO customer insights to analyze business data and drive strategic decisions.',
+    certs: ['Google Data Analytics', 'IBM Data Analyst'],
+    icon: '📊',
+  },
+  {
+    to: 'Business Intelligence Analyst', duration: '7 months', gap: 68, stars: 4,
+    tag: 'Good Match', tagC: C.sky, tagBg: C.skyLt,
+    btnC: C.sky, salary: '₱45K–₱70K/mo',
+    demand: 'Growing', demandC: C.sky,
+    desc: 'Build dashboards and reports that help executives make faster, data-backed decisions.',
+    certs: ['Microsoft Power BI', 'Google Data Analytics'],
+    icon: '📈',
+  },
+  {
+    to: 'Product Manager', duration: '8 months', gap: 74, stars: 5,
+    tag: 'Advanced Path', tagC: '#7C3AED', tagBg: '#F5F3FF',
+    btnC: '#7C3AED', salary: '₱60K–₱100K/mo',
+    demand: 'Competitive', demandC: '#D97706',
+    desc: 'Apply your deep understanding of customer pain points to own product strategy and roadmaps.',
+    certs: ['Google Project Management', 'Agile Scrum Master'],
+    icon: '🚀',
+  },
+];
+
+function CareerMap() {
+  return (
+    <div className="fade-in">
+      <TopBar title="Career Map" subtitle="AI-generated pathways based on your skill profile and imported certifications" />
+      <div style={{ padding: '24px 28px', maxWidth: 1080 }}>
+
+        {/* AI context banner */}
+        <Card style={{ padding: '14px 18px', marginBottom: 20, background: `linear-gradient(90deg,${C.navy}08,${C.teal}08)` }} hover={false}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: C.tealLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: C.teal }}>{Ico.Spark}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: '#111827' }}>SkillBridge AI analyzed 847 BPO-to-Tech career transitions in the Philippines</div>
+              <div style={{ fontSize: 12, color: C.gray, marginTop: 2 }}>Maria Reyes · Customer Service Agent · 3 yrs · Metro Manila · 3 certs imported via Credly · Last assessed: Mar 28, 2026</div>
+            </div>
+            <button className="btn" style={{ flexShrink: 0, border: `1.5px solid ${C.navy}30`, background: '#fff', color: C.navy, borderRadius: 10, padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Retake Assessment</button>
+          </div>
+        </Card>
+
+        <SectionHeader title="Your AI-Generated Career Pathways" subtitle="Based on your Skill Profile and 3 imported certifications" />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {PATHS.map((p, i) => (
+            <Card key={i} style={{ padding: 0, overflow: 'hidden', border: i === 0 ? `2px solid ${C.teal}` : '1px solid #E9EEF4' }}>
+              <div style={{ display: 'flex' }}>
+                {/* Color stripe */}
+                <div style={{ width: 6, background: p.btnC, flexShrink: 0 }} />
+                <div style={{ flex: 1, padding: '22px 24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+
+                    {/* Icon */}
+                    <div style={{ width: 56, height: 56, borderRadius: 14, background: `${p.btnC}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>{p.icon}</div>
+
+                    {/* Main info */}
+                    <div style={{ flex: 1, minWidth: 240 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                        <h3 style={{ fontSize: 16, fontWeight: 800, color: '#111827' }}>Customer Service Agent → {p.to}</h3>
+                        <Pill color={p.tagC} bg={p.tagBg} size="xs">{p.tag}</Pill>
+                      </div>
+                      <p style={{ fontSize: 13, color: C.gray, marginBottom: 10, maxWidth: 520, lineHeight: 1.5 }}>{p.desc}</p>
+                      <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', fontSize: 12, marginBottom: 10 }}>
+                        <span style={{ color: C.gray }}>⏱ <strong style={{ color: '#374151' }}>{p.duration}</strong></span>
+                        <span style={{ color: p.demandC }}>● <strong>{p.demand}</strong></span>
+                        <span style={{ color: C.gray }}>💰 <strong style={{ color: '#374151' }}>{p.salary}</strong></span>
+                        <span style={{ display: 'flex', gap: 2, alignItems: 'center', color: C.gray }}>
+                          Difficulty: <span style={{ display: 'inline-flex', marginLeft: 3 }}><Stars n={p.stars} /></span>
+                        </span>
+                      </div>
+
+                      {/* Skill gap */}
+                      <div style={{ marginBottom: 10 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
+                          <span style={{ color: C.gray, fontWeight: 600 }}>Skill Gap</span>
+                          <span style={{ color: '#EF4444', fontWeight: 700 }}>{p.gap}% to bridge</span>
+                        </div>
+                        <Bar pct={p.gap} color="#FCA5A5" height={6} bg="#FEE2E2" />
+                      </div>
+
+                      {/* Cert chips */}
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 11, color: '#6B7280', fontWeight: 600 }}>Recommended certs:</span>
+                        {p.certs.map(c => (
+                          <span key={c} style={{ background: '#F3F4F6', color: '#374151', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{c}</span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* CTA */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end', flexShrink: 0 }}>
+                      <button className="btn" style={{ background: p.btnC, color: '#fff', border: 'none', borderRadius: 10, padding: '11px 22px', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        {i === 0 ? 'Continue Path →' : 'View Path →'}
+                      </button>
+                      {i === 0 && <Pill color={C.teal} bg={C.tealLt} size="xs">✓ Active</Pill>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════ SCREEN 3 — LEARNING MODULES ══════════════════════ */
+const MODULES = [
+  { n: 1, title: 'Excel & Google Sheets Fundamentals', weeks: 2, status: 'Completed',   pct: 100, cert: 'Excel Fundamentals – BPO Track' },
+  { n: 2, title: 'Introduction to SQL',                 weeks: 2, status: 'In Progress', pct: 20,  cert: 'SQL Fundamentals Badge' },
+  { n: 3, title: 'Python for Beginners',                weeks: 3, status: 'Locked',      pct: 0,   cert: 'Python Basics Certificate' },
+  { n: 4, title: 'Data Visualization',                  weeks: 2, status: 'Locked',      pct: 0,   cert: 'Data Viz Badge' },
+  { n: 5, title: 'Statistics & Analytics Thinking',     weeks: 2, status: 'Locked',      pct: 0,   cert: 'Analytics Fundamentals' },
+  { n: 6, title: 'Capstone: BPO Data Project',          weeks: 3, status: 'Locked',      pct: 0,   cert: 'BPO Data Analyst Capstone Badge' },
+];
+
+const MOD_STYLE = {
+  Completed:   { bg: C.greenLt, border: `1.5px solid #A7F3D0`, numBg: C.green,   label: C.green,   pill: { c: C.green, bg: C.greenLt }, icon: Ico.Check },
+  'In Progress':{ bg: '#EFF6FF', border: `1.5px solid #BFDBFE`, numBg: C.sky,    label: C.sky,     pill: { c: C.sky, bg: C.skyLt    }, icon: null       },
+  Locked:      { bg: '#F9FAFB', border: `1px solid #E5E7EB`,   numBg: '#D1D5DB', label: '#9CA3AF', pill: { c: '#9CA3AF', bg: '#F3F4F6' }, icon: Ico.Lock },
+};
+
+function LearningModules() {
+  return (
+    <div className="fade-in">
+      <TopBar title="Learning Modules" subtitle="Customer Service Agent → Data Analyst" />
+      <div style={{ padding: '24px 28px', maxWidth: 1080 }}>
+
+        {/* Overall progress */}
+        <Card style={{ padding: 20, marginBottom: 20 }} hover={false}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div>
+              <div style={{ fontWeight: 800, color: '#111827', fontSize: 14 }}>Pathway Progress</div>
+              <div style={{ fontSize: 12, color: C.gray, marginTop: 2 }}>On track · Completion target: September 2026</div>
+            </div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: C.teal }}>35%</div>
+          </div>
+          <Bar pct={35} color={C.teal} height={12} />
+          <div style={{ display: 'flex', gap: 20, marginTop: 10 }}>
+            {[['✅ 1 Completed', C.green], ['🔵 1 In Progress', C.sky], ['🔒 4 Locked', '#9CA3AF']].map(([t, c]) => (
+              <span key={t} style={{ fontSize: 12, fontWeight: 600, color: c }}>{t}</span>
+            ))}
+          </div>
+        </Card>
+
+        {/* Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          {MODULES.map(m => {
+            const s = MOD_STYLE[m.status];
+            const inProgress = m.status === 'In Progress';
+            const locked = m.status === 'Locked';
+            return (
+              <div key={m.n} className={locked ? '' : 'card-hover'}
+                style={{ background: s.bg, border: s.border, borderRadius: 14, padding: '18px 18px', opacity: locked ? .65 : 1, cursor: locked ? 'default' : 'pointer', transition: 'all .18s' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                  <div style={{ width: 42, height: 42, borderRadius: 12, background: s.numBg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 14, flexShrink: 0, position: 'relative' }}>
+                    {s.icon || `M${m.n}`}
+                    {inProgress && <span className="pulse-dot" style={{ position: 'absolute', top: -3, right: -3, width: 9, height: 9, borderRadius: '50%', background: C.sky, border: '2px solid #EFF6FF' }} />}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF' }}>Module {m.n}</span>
+                      <Pill color={s.pill.c} bg={s.pill.bg} size="xs">{m.status}</Pill>
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: locked ? '#9CA3AF' : '#111827', marginBottom: 4 }}>{m.title}</div>
+                    <div style={{ display: 'flex', gap: 12, fontSize: 11, color: '#9CA3AF', marginBottom: 8 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>{Ico.Clock} {m.weeks} weeks</span>
+                      {!locked && <span>🏅 {m.cert}</span>}
+                    </div>
+                    {!locked && (
+                      <>
+                        <Bar pct={m.pct} color={inProgress ? C.sky : C.green} height={5} bg={inProgress ? '#DBEAFE' : '#D1FAE5'} />
+                        <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 3 }}>{m.pct}% complete</div>
+                      </>
+                    )}
+                  </div>
+                  {!locked && (
+                    <button className="btn" style={{ background: inProgress ? C.sky : C.teal, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                      {m.status === 'Completed' ? 'Review' : 'Continue →'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════ SCREEN 4 — CREDENTIALS ══════════════════════ */
+const EARNED = [
+  {
+    name: 'Google IT Support Certificate',
+    skill: 'IT Support & Networking',
+    issued: 'January 2025',
+    issuer: 'SkillBridge PH × Google',
+    color: '#4285F4',
+    emoji: '🅖',
+    credlyUrl: true,
+  },
+  {
+    name: 'Excel Fundamentals – BPO Track',
+    skill: 'Spreadsheet Analytics',
+    issued: 'March 2026',
+    issuer: 'SkillBridge PH × Concentrix',
+    color: C.teal,
+    emoji: '📊',
+    credlyUrl: false,
+  },
+];
+const UPCOMING = [
+  { name: 'SQL Fundamentals Badge',            status: 'In Progress', pct: 20, issuer: 'SkillBridge PH × Accenture', emoji: '🗄️', color: C.sky   },
+  { name: 'Google Data Analytics Certificate', status: 'Locked',      pct: 0,  issuer: 'SkillBridge PH × Google',    emoji: '📉', color: '#9CA3AF' },
+  { name: 'BPO Data Analyst Capstone Badge',   status: 'Locked',      pct: 0,  issuer: 'SkillBridge PH × DICT',      emoji: '🎓', color: '#9CA3AF' },
+];
+
+function Credentials() {
+  return (
+    <div className="fade-in">
+      <TopBar title="My Credentials" subtitle="All credentials verified and issued via Credly" right={<CredlyBadge />} />
+      <div style={{ padding: '24px 28px', maxWidth: 1080 }}>
+
+        {/* Stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 20 }}>
+          {[
+            { label: 'Badges Earned',   value: 2, color: C.teal,   emoji: '🏅' },
+            { label: 'In Progress',      value: 1, color: C.sky,    emoji: '🔄' },
+            { label: 'Pathway Badges',   value: 5, color: '#6B7280', emoji: '🎯' },
+          ].map(s => (
+            <Card key={s.label} style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 28 }}>{s.emoji}</span>
+              <div>
+                <div style={{ fontSize: 26, fontWeight: 900, color: s.color }}>{s.value}</div>
+                <div style={{ fontSize: 11, color: C.gray }}>{s.label}</div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Earned */}
+        <SectionHeader title="Earned Credentials" subtitle="Cryptographically signed and independently verifiable" />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 28 }}>
+          {EARNED.map((b, i) => (
+            <Card key={i} style={{ overflow: 'hidden' }}>
+              {/* Badge header */}
+              <div style={{ background: `linear-gradient(135deg,${b.color}18 0%,${b.color}30 100%)`, padding: '24px 20px', textAlign: 'center', borderBottom: '1px solid #E9EEF4', position: 'relative' }}>
+                <div style={{ position: 'absolute', top: 10, right: 12 }}><CredlyBadge /></div>
+                <div style={{ fontSize: 40, marginBottom: 10 }}>{b.emoji}</div>
+                <div style={{ width: 56, height: 56, borderRadius: '50%', background: b.color, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px', boxShadow: `0 0 0 5px ${b.color}25`, color: '#fff', fontSize: 22 }}>✓</div>
+                <div style={{ fontWeight: 800, fontSize: 15, color: '#111827' }}>{b.name}</div>
+                <div style={{ fontSize: 12, color: C.gray, marginTop: 3 }}>{b.skill}</div>
+                <div style={{ marginTop: 8, display: 'flex', justifyContent: 'center' }}>
+                  <Pill color={C.teal} bg={C.tealLt} size="xs">✦ Verified by Credly</Pill>
+                </div>
+              </div>
+              {/* Footer */}
+              <div style={{ padding: '14px 18px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px' }}>Issued by</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#111827', marginTop: 2 }}>{b.issuer}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px' }}>Date Issued</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#111827', marginTop: 2 }}>{b.issued}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="btn" style={{ flex: 1, background: b.color, color: '#fff', border: 'none', borderRadius: 9, padding: '9px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    {Ico.Share} Share Badge
+                  </button>
+                  {b.credlyUrl && (
+                    <button className="btn" style={{ flex: 1, background: 'transparent', border: `1.5px solid ${b.color}`, color: b.color, borderRadius: 9, padding: '9px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                      {Ico.Link} View on Credly
+                    </button>
+                  )}
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Upcoming */}
+        <SectionHeader title="Upcoming Credentials" subtitle="Unlock by completing the corresponding learning modules" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
+          {UPCOMING.map((b, i) => (
+            <div key={i} style={{ background: '#F9FAFB', border: '1.5px dashed #E5E7EB', borderRadius: 14, overflow: 'hidden', opacity: b.status === 'Locked' ? .6 : 1 }}>
+              <div style={{ padding: '20px 16px', textAlign: 'center', borderBottom: '1px solid #F3F4F6' }}>
+                <div style={{ fontSize: 32, marginBottom: 8, filter: b.status === 'Locked' ? 'grayscale(1)' : 'none' }}>{b.emoji}</div>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: b.status === 'Locked' ? '#E5E7EB' : `${b.color}20`, border: `2px solid ${b.status === 'Locked' ? '#D1D5DB' : b.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px', color: b.status === 'Locked' ? '#9CA3AF' : b.color, fontSize: 16 }}>
+                  {b.status === 'Locked' ? Ico.Lock : '⏳'}
+                </div>
+                <div style={{ fontWeight: 700, fontSize: 13, color: b.status === 'Locked' ? '#9CA3AF' : '#374151' }}>{b.name}</div>
+                <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 3 }}>{b.issuer}</div>
+              </div>
+              <div style={{ padding: '12px 14px' }}>
+                {b.pct > 0 && (
+                  <div style={{ marginBottom: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginBottom: 4 }}>
+                      <span style={{ color: C.gray }}>Progress</span><span style={{ color: b.color, fontWeight: 700 }}>{b.pct}%</span>
+                    </div>
+                    <Bar pct={b.pct} color={b.color} height={5} />
+                  </div>
+                )}
+                <div style={{ background: '#F3F4F6', borderRadius: 8, padding: '6px 10px', textAlign: 'center', fontSize: 11, color: '#9CA3AF', fontWeight: 600 }}>
+                  {b.status === 'In Progress' ? '⏳ In Progress' : '🔒 Complete previous modules to unlock'}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Security note */}
+        <div style={{ marginTop: 20, background: `${C.navy}06`, border: `1px solid ${C.navy}15`, borderRadius: 12, padding: '13px 16px', display: 'flex', gap: 10, alignItems: 'center' }}>
+          <span style={{ fontSize: 18 }}>🔐</span>
+          <p style={{ fontSize: 12, color: '#4B5563', lineHeight: 1.5 }}>
+            <strong style={{ color: C.navy }}>Credentials are cryptographically secured and independently verifiable.</strong> Employers can verify in under 10 seconds. Recognized by TESDA, DICT, and 60+ partner companies across the Philippines.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════ SCREEN 5 — JOB MATCHES ══════════════════════ */
+const JOBS = [
+  {
+    role: 'Junior Data Analyst',
+    company: 'Concentrix',
+    location: 'Davao City',
+    match: 78,
+    type: 'Full-time',
+    work: 'On-site',
+    matchColor: C.teal,
+    certs: [
+      { name: 'Google IT Support', done: true },
+      { name: 'SQL Fundamentals Badge', done: false, partial: true },
+    ],
+    salary: '₱35K–₱45K/mo',
+    posted: '2 days ago',
+    btnC: C.teal,
+    hot: true,
+  },
+  {
+    role: 'Data Operations Associate',
+    company: 'Teleperformance',
+    location: 'Taguig, Manila',
+    match: 65,
+    type: 'Full-time',
+    work: 'Hybrid',
+    matchColor: C.sky,
+    certs: [
+      { name: 'Google IT Support', done: true },
+      { name: 'Excel Fundamentals', done: true },
+    ],
+    salary: '₱28K–₱38K/mo',
+    posted: '5 days ago',
+    btnC: C.sky,
+    hot: false,
+  },
+  {
+    role: 'Analytics Support Specialist',
+    company: 'Accenture',
+    location: 'Cebu City',
+    match: 60,
+    type: 'Full-time',
+    work: 'On-site',
+    matchColor: '#7C3AED',
+    certs: [
+      { name: 'Google IT Support', done: true },
+      { name: 'SQL Fundamentals Badge', done: false },
+    ],
+    salary: '₱30K–₱40K/mo',
+    posted: '1 week ago',
+    btnC: '#7C3AED',
+    hot: false,
+  },
+];
+
+function JobMatches() {
+  return (
+    <div className="fade-in">
+      <TopBar title="Job Matches" subtitle="Updated in real-time as you earn credentials" />
+      <div style={{ padding: '24px 28px', maxWidth: 1080 }}>
+
+        {/* Info bar */}
+        <div style={{ background: C.tealLt, border: `1px solid #A7F3D0`, borderRadius: 12, padding: '11px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 18 }}>⚡</span>
+          <p style={{ fontSize: 13, color: '#065F46', fontWeight: 600 }}>
+            Earn your <strong>SQL Fundamentals Badge</strong> to unlock 12 more job matches and push your top match score from 78% → 91%.
+          </p>
+          <button className="btn" style={{ marginLeft: 'auto', flexShrink: 0, background: C.teal, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Continue M2 →</button>
+        </div>
+
+        <SectionHeader title="Roles You Are Now Qualified For" subtitle={`${JOBS.length} matches based on your current credentials and skill profile`}
+          action={
+            <div style={{ display: 'flex', gap: 8 }}>
+              {['All Roles', 'Top Matches', 'Hybrid/Remote'].map((f, i) => (
+                <button key={f} className="btn" style={{ background: i === 0 ? C.navy : '#fff', color: i === 0 ? '#fff' : C.gray, border: `1px solid ${i === 0 ? C.navy : '#E5E7EB'}`, borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{f}</button>
+              ))}
+            </div>
+          }
+        />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {JOBS.map((j, i) => (
+            <Card key={i} style={{ padding: 0, overflow: 'hidden', border: i === 0 ? `2px solid ${C.teal}` : '1px solid #E9EEF4' }}>
+              <div style={{ display: 'flex', alignItems: 'stretch' }}>
+
+                {/* Match score column */}
+                <div style={{ width: 90, background: `${j.matchColor}10`, borderRight: `1px solid ${j.matchColor}20`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '18px 0', flexShrink: 0 }}>
+                  <Ring pct={j.match} size={68} stroke={7} color={j.matchColor}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 14, fontWeight: 900, color: j.matchColor, lineHeight: 1 }}>{j.match}%</div>
+                      <div style={{ fontSize: 8, color: C.gray, fontWeight: 600 }}>MATCH</div>
+                    </div>
+                  </Ring>
+                  {j.hot && <Pill color={C.teal} bg={C.tealLt} size="xs" style={{ marginTop: 6 }}>🔥 Top</Pill>}
+                </div>
+
+                {/* Main body */}
+                <div style={{ flex: 1, padding: '18px 20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
+                        <h3 style={{ fontSize: 16, fontWeight: 800, color: '#111827' }}>{j.role}</h3>
+                        {j.hot && <Pill color={C.teal} bg={C.tealLt} size="xs">⭐ Best Match</Pill>}
+                      </div>
+                      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 12, color: C.gray, marginBottom: 10 }}>
+                        <span style={{ fontWeight: 700, color: C.navy }}>{j.company}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>{Ico.Loc} {j.location}</span>
+                        <span>💼 {j.type}</span>
+                        <span>🏢 {j.work}</span>
+                        <span>💰 {j.salary}</span>
+                        <span style={{ color: '#9CA3AF' }}>Posted {j.posted}</span>
+                      </div>
+
+                      {/* Required certs */}
+                      <div style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, color: C.gray, fontWeight: 600, marginBottom: 6 }}>Required Credentials:</div>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          {j.certs.map((c, ci) => (
+                            <div key={ci} style={{ display: 'flex', alignItems: 'center', gap: 5, background: c.done ? C.greenLt : c.partial ? C.skyLt : '#F3F4F6', border: `1px solid ${c.done ? '#A7F3D0' : c.partial ? '#BFDBFE' : '#E5E7EB'}`, borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: c.done ? C.green : c.partial ? C.sky : '#9CA3AF' }}>
+                              {c.done ? '✓' : c.partial ? '⏳' : Ico.Lock}
+                              <span>{c.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* CTA */}
+                    <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
+                      <button className="btn" style={{ background: j.btnC, color: '#fff', border: 'none', borderRadius: 10, padding: '11px 22px', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        Apply Now →
+                      </button>
+                      <button className="btn" style={{ background: 'transparent', border: `1.5px solid ${j.btnC}30`, color: j.btnC, borderRadius: 10, padding: '8px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        Save Job
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Unlock prompt */}
+        <div style={{ marginTop: 20, textAlign: 'center', padding: '30px 20px', border: '2px dashed #E5E7EB', borderRadius: 16, background: '#FAFAFA' }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>🔒</div>
+          <div style={{ fontWeight: 700, color: '#374151', fontSize: 14 }}>+12 more jobs unlocked with SQL Fundamentals Badge</div>
+          <div style={{ color: C.gray, fontSize: 13, marginTop: 4 }}>Roles at Telus International, iQor, and TTEC Philippines are waiting for you.</div>
+          <button className="btn" style={{ marginTop: 14, background: C.navy, color: '#fff', border: 'none', borderRadius: 10, padding: '10px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Continue Learning to Unlock →</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════ SCREEN 6 — PROFILE ══════════════════════ */
+function Profile() {
+  return (
+    <div className="fade-in">
+      <TopBar title="My Profile" subtitle="Maria Reyes · BPO Career Upskilling" />
+      <div style={{ padding: '24px 28px', maxWidth: 760 }}>
+        <Card style={{ padding: 28, marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 24 }}>
+            <Avatar initials="MR" size={80} bg={C.teal} textSize={26} />
+            <div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: '#111827' }}>Maria Reyes</div>
+              <div style={{ fontSize: 14, color: C.gray, marginTop: 2 }}>Customer Service Agent · Concentrix Manila</div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <Pill color={C.teal} bg={C.tealLt} size="xs">✦ Credly Connected</Pill>
+                <Pill color={C.sky} bg={C.skyLt} size="xs">TESDA Registered</Pill>
+              </div>
+            </div>
+            <button className="btn" style={{ marginLeft: 'auto', background: C.navy, color: '#fff', border: 'none', borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Edit Profile</button>
+          </div>
+          {[
+            ['Full Name', 'Maria Santos Reyes'],
+            ['Email', 'maria.reyes@skillbridgeph.com'],
+            ['BPO Company', 'Concentrix Manila (BGC)'],
+            ['Work Experience', '3 years in Customer Service'],
+            ['Education', 'BS Business Administration – FEU Manila, 2021'],
+            ['Location', 'Quezon City, Metro Manila'],
+            ['SkillBridge Level', 'Level 3 — Intermediate Upskiller'],
+          ].map(([k, v]) => (
+            <div key={k} style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', padding: '11px 0', gap: 16 }}>
+              <div style={{ width: 180, fontSize: 12, color: '#9CA3AF', fontWeight: 600 }}>{k}</div>
+              <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#374151' }}>{v}</div>
+            </div>
+          ))}
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════ SCREEN 7 — SETTINGS ══════════════════════ */
+function Settings() {
+  const [notif, setNotif] = useState(true);
+  const [remind, setRemind] = useState(true);
+  const [credly, setCredy] = useState(true);
+
+  const Toggle = ({ on, onToggle }) => (
+    <div onClick={onToggle} style={{ width: 44, height: 24, borderRadius: 99, background: on ? C.teal : '#E5E7EB', cursor: 'pointer', position: 'relative', transition: 'background .2s', flexShrink: 0 }}>
+      <div style={{ position: 'absolute', top: 3, left: on ? 23 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .2s' }} />
+    </div>
+  );
+
+  return (
+    <div className="fade-in">
+      <TopBar title="Settings" subtitle="Manage your SkillBridge PH preferences" />
+      <div style={{ padding: '24px 28px', maxWidth: 680 }}>
+        {[
+          { title: 'Notifications', items: [
+            { label: 'Push Notifications', sub: 'Module reminders, checkpoint alerts', on: notif, set: setNotif },
+            { label: 'Daily Learning Reminders', sub: 'Get reminded to hit your daily goal', on: remind, set: setRemind },
+          ]},
+          { title: 'Integrations', items: [
+            { label: 'Credly Badge Sync', sub: 'Auto-sync earned badges to your Credly profile', on: credly, set: setCredy },
+          ]},
+        ].map(g => (
+          <Card key={g.title} style={{ padding: 22, marginBottom: 16 }} hover={false}>
+            <div style={{ fontWeight: 800, color: '#111827', fontSize: 14, marginBottom: 14 }}>{g.title}</div>
+            {g.items.map(item => (
+              <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #F3F4F6', gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{item.label}</div>
+                  <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{item.sub}</div>
+                </div>
+                <Toggle on={item.on} onToggle={() => item.set(v => !v)} />
+              </div>
+            ))}
+          </Card>
+        ))}
+        <Card style={{ padding: 22 }} hover={false}>
+          <div style={{ fontWeight: 800, color: '#111827', fontSize: 14, marginBottom: 14 }}>Account</div>
+          {['Change Password', 'Export My Data', 'Delete Account'].map((a, i) => (
+            <button key={a} className="btn" style={{ display: 'block', width: '100%', textAlign: 'left', background: 'transparent', border: 'none', borderBottom: i < 2 ? '1px solid #F3F4F6' : 'none', padding: '11px 0', fontSize: 13, fontWeight: 600, color: i === 2 ? '#EF4444' : '#374151', cursor: 'pointer', fontFamily: 'inherit' }}>{a} →</button>
+          ))}
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════ APP ROOT ══════════════════════ */
+function App() {
+  const [screen, setScreen] = useState('dashboard');
+
+  const SCREENS = {
+    dashboard:   <Dashboard />,
+    careermap:   <CareerMap />,
+    modules:     <LearningModules />,
+    credentials: <Credentials />,
+    jobs:        <JobMatches />,
+    profile:     <Profile />,
+    settings:    <Settings />,
+  };
+
+  return (
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: "Inter, system-ui, sans-serif" }}>
+      <Sidebar active={screen} onNav={setScreen} />
+      <main style={{ flex: 1, overflowY: 'auto', background: '#F5F7FA' }}>
+        {SCREENS[screen] || <Dashboard />}
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
