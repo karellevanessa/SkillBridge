@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkillBridge PH — Employer Dashboard</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #F5F7FA; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn .3s ease both; }
+    .card-hover { transition: transform .18s ease, box-shadow .18s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(31,78,121,.1); }
+    .btn { transition: filter .15s ease, transform .1s ease; cursor: pointer; }
+    .btn:hover { filter: brightness(1.08); }
+    .btn:active { transform: scale(.97); }
+    .sidebar-item { transition: background .15s, color .15s; }
+    .sidebar-item:hover { background: rgba(255,255,255,.08); }
+    @keyframes pulse-dot { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.5; transform:scale(1.3); } }
+    .pulse-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
+    .credly-badge { background: linear-gradient(135deg,#FF6B2B 0%,#FF8C42 100%); }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+
+const C = {
+  navy:    '#1F4E79',
+  navyDk:  '#163856',
+  teal:    '#1D9E75',
+  tealLt:  '#E8F8F2',
+  sky:     '#2E75B6',
+  skyLt:   '#EAF3FB',
+  warn:    '#F59E0B',
+  warnLt:  '#FFFBEB',
+  danger:  '#EF4444',
+  gray:    '#6B7280',
+  grayLt:  '#F3F4F6',
+  green:   '#10B981',
+  greenLt: '#ECFDF5',
+  purple:  '#7C3AED',
+  purpleLt:'#EDE9FE',
+};
+
+const Ico = {
+  Home:    <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg>,
+  Users:   <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>,
+  Team:    <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/></svg>,
+  Brief:   <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd"/><path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.487-.46-8-1.308z"/></svg>,
+  Chart:   <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>,
+  Gear:    <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd"/></svg>,
+  Bell:    <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/></svg>,
+  Check:   <svg viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M12.416 3.376a.75.75 0 01.208 1.04l-5 7.5a.75.75 0 01-1.154.114l-3-3a.75.75 0 011.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 011.04-.207z" clipRule="evenodd"/></svg>,
+  Shield:  <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>,
+  Arrow:   <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/></svg>,
+  Loc:     <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/></svg>,
+  Download:<svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd"/></svg>,
+  Plus:    <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/></svg>,
+  Eye:     <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/></svg>,
+};
+
+const Avatar = ({ initials = 'SB', size = 40, bg = C.sky, textSize = 14 }) => (
+  <div style={{ width: size, height: size, borderRadius: '50%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: textSize, flexShrink: 0, letterSpacing: '.5px' }}>
+    {initials}
+  </div>
+);
+
+const Pill = ({ children, color, bg, size = 'sm' }) => (
+  <span style={{ color, background: bg, borderRadius: 99, padding: size === 'xs' ? '2px 8px' : '3px 10px', fontSize: size === 'xs' ? 10 : 11, fontWeight: 700, letterSpacing: '.3px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+    {children}
+  </span>
+);
+
+const Bar = ({ pct, color = C.sky, height = 8, bg = '#E5E7EB' }) => (
+  <div style={{ width: '100%', height, background: bg, borderRadius: 99, overflow: 'hidden' }}>
+    <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 99, transition: 'width .6s cubic-bezier(.4,0,.2,1)' }} />
+  </div>
+);
+
+const Ring = ({ pct, size = 80, stroke = 8, color = C.sky, bg = '#E5E7EB', children }) => {
+  const r = (size - stroke) / 2;
+  const circ = 2 * Math.PI * r;
+  const dash = circ * (1 - pct / 100);
+  return (
+    <div style={{ position: 'relative', width: size, height: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <svg width={size} height={size} style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(-90deg)' }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={bg} strokeWidth={stroke} />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeDasharray={circ} strokeDashoffset={dash} strokeLinecap="round" style={{ transition: 'stroke-dashoffset .8s' }} />
+      </svg>
+      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>{children}</div>
+    </div>
+  );
+};
+
+const Card = ({ children, style = {}, hover = true }) => (
+  <div className={hover ? 'card-hover' : ''} style={{ background: '#fff', borderRadius: 16, border: '1px solid #E9EEF4', boxShadow: '0 1px 4px rgba(0,0,0,.05)', overflow: 'hidden', ...style }}>
+    {children}
+  </div>
+);
+
+const SectionHeader = ({ title, subtitle, action }) => (
+  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
+    <div>
+      <h2 style={{ fontSize: 20, fontWeight: 800, color: '#111827', letterSpacing: '-.3px' }}>{title}</h2>
+      {subtitle && <p style={{ fontSize: 13, color: C.gray, marginTop: 3 }}>{subtitle}</p>}
+    </div>
+    {action}
+  </div>
+);
+
+const TopBar = ({ title, subtitle, right }) => (
+  <div style={{ background: '#fff', borderBottom: '1px solid #E9EEF4', padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 20, boxShadow: '0 1px 3px rgba(0,0,0,.04)' }}>
+    <div>
+      <div style={{ fontSize: 17, fontWeight: 800, color: '#111827', letterSpacing: '-.2px' }}>{title}</div>
+      {subtitle && <div style={{ fontSize: 12, color: C.gray, marginTop: 1 }}>{subtitle}</div>}
+    </div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      {right}
+      <button style={{ position: 'relative', width: 36, height: 36, borderRadius: 10, background: '#F8FAFC', border: '1px solid #E9EEF4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.gray, cursor: 'pointer' }} className="btn">
+        {Ico.Bell}
+        <span style={{ position: 'absolute', top: 7, right: 7, width: 7, height: 7, borderRadius: '50%', background: '#EF4444', border: '1.5px solid #fff' }} />
+      </button>
+      <Avatar initials="SB" size={36} bg={C.sky} textSize={12} />
+    </div>
+  </div>
+);
+
+const CredlyBadge = () => (
+  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'linear-gradient(135deg,#FF6B2B,#FF8C42)', color: '#fff', borderRadius: 6, padding: '2px 8px', fontSize: 10, fontWeight: 800, letterSpacing: '.4px' }}>
+    ✦ CREDLY VERIFIED
+  </span>
+);
+
+/* ══ SIDEBAR ══ */
+const NAV = [
+  { id: 'overview',   label: 'Overview',           icon: Ico.Home  },
+  { id: 'talent',     label: 'Talent Pool',         icon: Ico.Users },
+  { id: 'workforce',  label: 'Internal Workforce',  icon: Ico.Team  },
+  { id: 'postings',   label: 'Job Postings',        icon: Ico.Brief },
+  { id: 'reports',    label: 'Reports & ROI',       icon: Ico.Chart },
+  { id: 'settings',   label: 'Settings',            icon: Ico.Gear  },
+];
+
+function Sidebar({ active, onNav }) {
+  return (
+    <div style={{ width: 232, minHeight: '100vh', background: C.navy, display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+      {/* Brand */}
+      <div style={{ padding: '20px 18px 16px', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: C.sky, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#fff', fontSize: 13, flexShrink: 0 }}>SB</div>
+          <div>
+            <div style={{ color: '#fff', fontWeight: 900, fontSize: 15, letterSpacing: '-.3px', lineHeight: 1 }}>SkillBridge</div>
+            <div style={{ color: C.sky, fontSize: 9, fontWeight: 800, letterSpacing: '1.8px', marginTop: 2 }}>EMPLOYER</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Company card */}
+      <div style={{ padding: '14px 14px 12px', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
+        <div style={{ background: 'rgba(255,255,255,.07)', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Avatar initials="SB" size={36} bg={C.sky} textSize={12} />
+          <div style={{ minWidth: 0 }}>
+            <div style={{ color: '#fff', fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Stellar BPO PH</div>
+            <div style={{ color: '#93C5FD', fontSize: 11, marginTop: 1 }}>Enterprise Plan · Taguig</div>
+          </div>
+          <div style={{ marginLeft: 'auto' }}>
+            <div style={{ background: C.teal, borderRadius: 6, padding: '1px 6px', color: '#fff', fontSize: 9, fontWeight: 800, letterSpacing: '.5px' }}>ACTIVE</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Nav */}
+      <nav style={{ flex: 1, padding: '10px 10px' }}>
+        {NAV.map(n => {
+          const on = active === n.id;
+          return (
+            <button key={n.id} onClick={() => onNav(n.id)} className="sidebar-item"
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 10, marginBottom: 2, cursor: 'pointer', border: 'none', textAlign: 'left', background: on ? 'rgba(46,117,182,.3)' : 'transparent', color: on ? '#fff' : 'rgba(255,255,255,.6)', fontWeight: on ? 700 : 500, fontSize: 13, fontFamily: 'inherit', position: 'relative' }}>
+              <span style={{ color: on ? '#60A5FA' : 'rgba(255,255,255,.5)', flexShrink: 0 }}>{n.icon}</span>
+              {n.label}
+              {on && <span style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', width: 3, height: 18, borderRadius: '0 3px 3px 0', background: C.sky }} />}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Seat usage + back to home */}
+      <div style={{ padding: '8px 10px 6px', borderTop: '1px solid rgba(255,255,255,.08)' }}>
+        <div style={{ padding: '10px 10px 12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'rgba(255,255,255,.45)', fontSize: 10, marginBottom: 5 }}>
+            <span>42 / 60 seats used</span><span>Enterprise</span>
+          </div>
+          <Bar pct={70} color={C.sky} height={4} bg="rgba(255,255,255,.12)" />
+          <div style={{ color: 'rgba(255,255,255,.25)', fontSize: 9, marginTop: 8, textAlign: 'center', letterSpacing: '.5px' }}>SKILLBRIDGE PH PARTNER</div>
+        </div>
+        <div style={{ padding: '0 0 16px' }}>
+          <a href="../index.html" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', padding: '9px', borderRadius: 10, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: 'rgba(255,255,255,.45)', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}
+            onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,.12)'}
+            onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,.06)'}>
+            ← Back to Home
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══ SCREEN 1: OVERVIEW ══ */
+function Overview() {
+  const metrics = [
+    { label: 'Candidates Ready to Hire', value: '14', sub: '↑ 6 this week', color: C.teal, bg: C.tealLt, emoji: '🎯' },
+    { label: 'Sponsored Employees Active', value: '42', sub: '18 on track for cert', color: C.sky, bg: C.skyLt, emoji: '📚' },
+    { label: 'Avg. Cost-Per-Hire Reduction', value: '38%', sub: 'vs. traditional recruitment', color: C.green, bg: C.greenLt, emoji: '💰' },
+    { label: 'Open Roles Matched', value: '7/9', sub: '2 roles need more candidates', color: C.warn, bg: C.warnLt, emoji: '📋' },
+  ];
+
+  const feed = [
+    { text: 'Maria Reyes completed Data Analyst certification', time: '2 hours ago', color: C.teal, emoji: '🏅' },
+    { text: '3 new candidates match your Cloud Engineer posting', time: '4 hours ago', color: C.sky, emoji: '⚡' },
+    { text: 'Carlo Santos is 90% through the Cybersecurity pathway', time: 'Yesterday', color: C.purple, emoji: '🔐' },
+    { text: 'Ana Dela Cruz earned her Google Data Analytics badge', time: 'Yesterday', color: C.teal, emoji: '✦' },
+    { text: 'New batch of 8 candidates entered the talent pool', time: '2 days ago', color: C.gray, emoji: '👥' },
+  ];
+
+  return (
+    <div className="fade-in">
+      <TopBar title="Overview" subtitle="Miyerkules, Abril 1, 2026" />
+      <div style={{ padding: '24px 28px', maxWidth: 1080 }}>
+
+        {/* Hero */}
+        <div style={{ borderRadius: 18, background: `linear-gradient(130deg,${C.navy} 0%,#1A4268 100%)`, padding: '28px 32px', color: '#fff', marginBottom: 20, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', right: -30, top: -30, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,.04)' }} />
+          <div style={{ position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <span style={{ background: 'rgba(46,117,182,.4)', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700, color: '#93C5FD' }}>EMPLOYER COMMAND CENTER</span>
+            </div>
+            <h1 style={{ fontSize: 24, fontWeight: 900, letterSpacing: '-.4px', marginBottom: 6 }}>Good morning, Stellar BPO Philippines 👋</h1>
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,.7)', maxWidth: 520, lineHeight: 1.6 }}>
+              You have <strong style={{ color: '#60A5FA' }}>14 pre-vetted candidates</strong> ready for interview today — all Credly-verified, zero screening needed.
+            </p>
+            <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+              {['🔥 3 certs earned this week', '⚡ 42 active learners', '📋 7 roles matched', '💼 2 hires this month'].map(t => (
+                <span key={t} style={{ background: 'rgba(255,255,255,.1)', borderRadius: 8, padding: '5px 10px', fontSize: 12, fontWeight: 600 }}>{t}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Alert */}
+        <div style={{ background: C.skyLt, border: `1.5px solid #BFDBFE`, borderRadius: 12, padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 18 }}>⚡</span>
+          <p style={{ fontSize: 13, color: '#1E40AF', fontWeight: 600, flex: 1 }}>
+            <strong>14 candidates are interview-ready now</strong> — all have completed their certification pathway and passed proctored assessments.
+          </p>
+          <button className="btn" style={{ flexShrink: 0, background: C.sky, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 700 }}>View Talent Pool →</button>
+        </div>
+
+        {/* Metric tiles */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 20 }}>
+          {metrics.map(m => (
+            <Card key={m.label} style={{ padding: '18px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <span style={{ fontSize: 24 }}>{m.emoji}</span>
+                <Pill color={m.color} bg={m.bg} size="xs">{m.sub}</Pill>
+              </div>
+              <div style={{ fontSize: 30, fontWeight: 900, color: m.color, letterSpacing: '-.5px', lineHeight: 1 }}>{m.value}</div>
+              <div style={{ fontSize: 12, color: C.gray, marginTop: 4, fontWeight: 500 }}>{m.label}</div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Activity feed */}
+        <SectionHeader title="Live Activity Feed" subtitle="Real-time updates on your talent pipeline" />
+        <Card style={{ padding: 0 }} hover={false}>
+          {feed.map((f, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', borderBottom: i < feed.length - 1 ? '1px solid #F3F4F6' : 'none' }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: `${f.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{f.emoji}</div>
+              <div style={{ flex: 1, fontSize: 13, color: '#374151', fontWeight: 500 }}>{f.text}</div>
+              <div style={{ fontSize: 11, color: '#9CA3AF', whiteSpace: 'nowrap' }}>{f.time}</div>
+            </div>
+          ))}
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+/* ══ SCREEN 2: TALENT POOL ══ */
+const CANDIDATES = [
+  { name: 'Maria R.', initials: 'MR', role: 'Data Analyst', current: 'Customer Service Agent', cert: 'Google Data Analytics', match: 94, loc: 'Quezon City', avail: 'Available now', bg: C.teal, skills: ['SQL', 'Python', 'Tableau'], exp: '3 yrs BPO' },
+  { name: 'Carlo S.',  initials: 'CS', role: 'Cloud Engineer', current: 'Data Encoder', cert: 'AWS Solutions Architect', match: 88, loc: 'Taguig, BGC', avail: 'Available in 2 weeks', bg: C.sky, skills: ['AWS', 'Linux', 'Terraform'], exp: '5 yrs BPO' },
+  { name: 'Ana D.',    initials: 'AD', role: 'Cybersecurity Analyst', current: 'QA Analyst', cert: 'CompTIA Security+', match: 81, loc: 'Makati City', avail: 'Available now', bg: C.purple, skills: ['SIEM', 'Penetration Testing', 'GDPR'], exp: '4 yrs BPO' },
+  { name: 'Luis G.',   initials: 'LG', role: 'Product Manager', current: 'Team Leader', cert: 'Google PM Certificate', match: 76, loc: 'Pasig City', avail: 'Available in 1 month', bg: C.warn, skills: ['Agile', 'Product Roadmap', 'OKRs'], exp: '6 yrs BPO' },
+];
+
+function TalentPool() {
+  return (
+    <div className="fade-in">
+      <TopBar title="Talent Pool" subtitle="Pre-vetted, Credly-verified candidates ready to hire" right={<CredlyBadge />} />
+      <div style={{ padding: '24px 28px', maxWidth: 1080 }}>
+
+        {/* Stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 20 }}>
+          {[
+            { label: 'Total Candidates', value: '247', color: C.sky, emoji: '👥' },
+            { label: 'Interview-Ready', value: '14', color: C.teal, emoji: '✅' },
+            { label: 'Avg. Match Score', value: '82%', color: C.green, emoji: '🎯' },
+            { label: 'Placed This Month', value: '6', color: C.purple, emoji: '🏆' },
+          ].map(s => (
+            <Card key={s.label} style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 24 }}>{s.emoji}</span>
+              <div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: s.color }}>{s.value}</div>
+                <div style={{ fontSize: 11, color: C.gray }}>{s.label}</div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Filters */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+          {['All Roles', 'Data Analyst', 'Cloud Engineer', 'Cybersecurity', 'Product Manager'].map((f, i) => (
+            <button key={f} className="btn" style={{ background: i === 0 ? C.navy : '#fff', color: i === 0 ? '#fff' : C.gray, border: `1px solid ${i === 0 ? C.navy : '#E5E7EB'}`, borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 600, border: `1px solid ${i===0?C.navy:'#E5E7EB'}` }}>{f}</button>
+          ))}
+          <div style={{ marginLeft: 'auto' }}>
+            <button className="btn" style={{ background: C.teal, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>{Ico.Download} Export List</button>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {CANDIDATES.map((c, i) => (
+            <Card key={i} style={{ padding: 0, overflow: 'hidden', border: i === 0 ? `2px solid ${C.teal}` : '1px solid #E9EEF4' }}>
+              <div style={{ display: 'flex', alignItems: 'stretch' }}>
+                {/* Match score */}
+                <div style={{ width: 90, background: `${c.bg}10`, borderRight: `1px solid ${c.bg}20`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '18px 0', flexShrink: 0 }}>
+                  <Ring pct={c.match} size={64} stroke={7} color={c.bg}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 13, fontWeight: 900, color: c.bg, lineHeight: 1 }}>{c.match}%</div>
+                      <div style={{ fontSize: 8, color: C.gray, fontWeight: 600 }}>MATCH</div>
+                    </div>
+                  </Ring>
+                  {i === 0 && <Pill color={C.teal} bg={C.tealLt} size="xs" style={{ marginTop: 6 }}>🔥 Top</Pill>}
+                </div>
+
+                {/* Body */}
+                <div style={{ flex: 1, padding: '18px 20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                        <Avatar initials={c.initials} size={32} bg={c.bg} textSize={11} />
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: 15, color: '#111827' }}>{c.name} — targeting <span style={{ color: c.bg }}>{c.role}</span></div>
+                          <div style={{ fontSize: 12, color: C.gray }}>Currently: {c.current} · {c.exp}</div>
+                        </div>
+                      </div>
+
+                      {/* Cert */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '10px 0', flexWrap: 'wrap' }}>
+                        <CredlyBadge />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>{c.cert}</span>
+                        <Pill color={C.green} bg={C.greenLt} size="xs">✓ Verified</Pill>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 12, color: C.gray }}>{Ico.Loc} {c.loc}</span>
+                        <Pill color={c.bg} bg={`${c.bg}15`} size="xs">⏱ {c.avail}</Pill>
+                      </div>
+
+                      {/* Skills */}
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {c.skills.map(s => (
+                          <span key={s} style={{ background: '#F3F4F6', borderRadius: 6, padding: '3px 10px', fontSize: 11, fontWeight: 600, color: '#374151' }}>{s}</span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* CTA */}
+                    <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <button className="btn" style={{ background: c.bg, color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                        Invite to Interview →
+                      </button>
+                      <button className="btn" style={{ background: 'transparent', border: `1.5px solid ${c.bg}30`, color: c.bg, borderRadius: 10, padding: '8px 16px', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
+                        {Ico.Eye} View Full Profile
+                      </button>
+                      <button className="btn" style={{ background: 'transparent', border: '1.5px solid #E5E7EB', color: C.gray, borderRadius: 10, padding: '8px 16px', fontSize: 12, fontWeight: 600 }}>
+                        Verify Credential ↗
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        <div style={{ marginTop: 16, textAlign: 'center', padding: '20px', border: '2px dashed #E5E7EB', borderRadius: 14, color: C.gray, fontSize: 13 }}>
+          Showing 4 of 247 candidates · <button className="btn" style={{ background: 'none', border: 'none', color: C.sky, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>Load more →</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══ SCREEN 3: INTERNAL WORKFORCE ══ */
+const EMPLOYEES = [
+  { name: 'Carlo Santos',   initials: 'CS', role: 'Data Encoder',          pathway: 'Cloud Engineer',       pct: 75, status: 'On Track',    cert: 'AWS Solutions Architect', bg: C.sky    },
+  { name: 'Ana Dela Cruz',  initials: 'AD', role: 'QA Analyst',            pathway: 'Cybersecurity Analyst', pct: 60, status: 'On Track',    cert: 'CompTIA Security+',       bg: C.purple },
+  { name: 'Jose Mendoza',   initials: 'JM', role: 'Finance Associate',     pathway: 'BI Analyst',           pct: 45, status: 'Needs Nudge', cert: 'Power BI Certificate',    bg: C.warn   },
+  { name: 'Lea Villanueva', initials: 'LV', role: 'Customer Service',      pathway: 'Data Analyst',         pct: 90, status: 'Ready',       cert: 'Google Data Analytics',   bg: C.teal   },
+  { name: 'Rico Bautista',  initials: 'RB', role: 'Team Leader',           pathway: 'Product Manager',      pct: 30, status: 'At Risk',     cert: 'Google PM Certificate',   bg: C.danger },
+];
+
+const STATUS_COLORS = {
+  'Ready':       { color: C.teal,   bg: C.tealLt   },
+  'On Track':    { color: C.sky,    bg: C.skyLt    },
+  'Needs Nudge': { color: C.warn,   bg: C.warnLt   },
+  'At Risk':     { color: C.danger, bg: '#FEF2F2'  },
+};
+
+function InternalWorkforce() {
+  const gaps = [
+    { skill: 'SQL / Data Querying', pct: 38, color: C.sky },
+    { skill: 'Cloud Platforms (AWS/GCP)', pct: 22, color: C.purple },
+    { skill: 'Python / Scripting', pct: 29, color: C.teal },
+    { skill: 'Cybersecurity Fundamentals', pct: 18, color: C.danger },
+    { skill: 'Product Management', pct: 31, color: C.warn },
+  ];
+
+  return (
+    <div className="fade-in">
+      <TopBar title="Internal Workforce" subtitle="Track your sponsored employees' progress in real-time" />
+      <div style={{ padding: '24px 28px', maxWidth: 1080 }}>
+
+        {/* Stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 20 }}>
+          {[
+            { label: 'Total Sponsored', value: '42', color: C.sky,    emoji: '📚' },
+            { label: 'Ready for Promotion', value: '8', color: C.teal,   emoji: '🚀' },
+            { label: 'Certs Earned (MTD)', value: '12', color: C.green,  emoji: '🏅' },
+            { label: 'Avg. Completion', value: '61%', color: C.purple, emoji: '📊' },
+          ].map(s => (
+            <Card key={s.label} style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 24 }}>{s.emoji}</span>
+              <div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: s.color }}>{s.value}</div>
+                <div style={{ fontSize: 11, color: C.gray }}>{s.label}</div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 16, marginBottom: 20 }}>
+
+          {/* Employee roster */}
+          <div>
+            <SectionHeader title="Employee Progress" subtitle="Click any employee to view their full pathway" />
+            <Card style={{ padding: 0 }} hover={false}>
+              {EMPLOYEES.map((e, i) => {
+                const sc = STATUS_COLORS[e.status];
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderBottom: i < EMPLOYEES.length - 1 ? '1px solid #F3F4F6' : 'none', cursor: 'pointer' }}
+                    onMouseEnter={ev => ev.currentTarget.style.background='#FAFAFA'}
+                    onMouseLeave={ev => ev.currentTarget.style.background='transparent'}>
+                    <Avatar initials={e.initials} size={38} bg={e.bg} textSize={12} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: '#111827' }}>{e.name}</div>
+                        <Pill color={sc.color} bg={sc.bg} size="xs">{e.status}</Pill>
+                        {e.status === 'Ready' && <span style={{ fontSize: 14 }}>🚀</span>}
+                      </div>
+                      <div style={{ fontSize: 11, color: C.gray, marginBottom: 6 }}>{e.role} → <strong style={{ color: e.bg }}>{e.pathway}</strong></div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Bar pct={e.pct} color={e.bg} height={6} />
+                        <span style={{ fontSize: 11, fontWeight: 800, color: e.bg, whiteSpace: 'nowrap' }}>{e.pct}%</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div style={{ padding: '12px 18px', borderTop: '1px solid #F3F4F6', textAlign: 'center' }}>
+                <button className="btn" style={{ background: 'none', border: 'none', color: C.sky, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>View all 42 employees →</button>
+              </div>
+            </Card>
+          </div>
+
+          {/* Skill gap heat map */}
+          <div>
+            <SectionHeader title="Team Skill Gap Map" subtitle="Critical competency gaps across your workforce" />
+            <Card style={{ padding: 22 }} hover={false}>
+              <p style={{ fontSize: 12, color: C.gray, marginBottom: 16, lineHeight: 1.5 }}>Percentage of sponsored employees <strong>below proficiency</strong> in each area:</p>
+              {gaps.map(g => (
+                <div key={g.skill} style={{ marginBottom: 14 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{g.skill}</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: g.pct > 35 ? C.danger : g.pct > 25 ? C.warn : C.teal }}>{100 - g.pct}% ready</span>
+                  </div>
+                  <Bar pct={100 - g.pct} color={g.pct > 35 ? C.danger : g.pct > 25 ? C.warn : g.color} height={8} />
+                </div>
+              ))}
+              <div style={{ marginTop: 16, background: C.skyLt, borderRadius: 10, padding: '10px 12px', fontSize: 12, color: '#1E40AF', fontWeight: 600 }}>
+                💡 Tip: 8 employees are ready to move into Cloud roles — post a Cloud Engineer opening today.
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══ SCREEN 4: JOB POSTINGS ══ */
+const POSTINGS = [
+  { role: 'Junior Data Analyst', dept: 'Analytics', certs: ['Google Data Analytics', 'Excel Fundamentals'], matched: 14, status: 'Active', filled: false, color: C.teal },
+  { role: 'Cloud Infrastructure Engineer', dept: 'IT Operations', certs: ['AWS Solutions Architect', 'Linux Essentials'], matched: 6, status: 'Active', filled: false, color: C.sky },
+  { role: 'Cybersecurity Analyst', dept: 'Security', certs: ['CompTIA Security+'], matched: 3, status: 'Active', filled: false, color: C.purple },
+  { role: 'Product Specialist', dept: 'Product', certs: ['Google PM Certificate', 'Agile Fundamentals'], matched: 9, status: 'Filled', filled: true, color: C.green },
+];
+
+function JobPostings() {
+  return (
+    <div className="fade-in">
+      <TopBar title="Job Postings" subtitle="Manage open roles and view real-time candidate matches" />
+      <div style={{ padding: '24px 28px', maxWidth: 1080 }}>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
+          <button className="btn" style={{ background: C.sky, color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>{Ico.Plus} Post New Role</button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          {POSTINGS.map((p, i) => (
+            <Card key={i} style={{ padding: 0, overflow: 'hidden', opacity: p.filled ? .75 : 1 }}>
+              <div style={{ background: `linear-gradient(135deg,${p.color}12,${p.color}22)`, padding: '18px 20px', borderBottom: '1px solid #E9EEF4' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: 16, color: '#111827', marginBottom: 3 }}>{p.role}</div>
+                    <div style={{ fontSize: 12, color: C.gray }}>Stellar BPO PH · {p.dept} Team</div>
+                  </div>
+                  <Pill color={p.filled ? C.green : p.color} bg={p.filled ? C.greenLt : `${p.color}18`} size="xs">
+                    {p.filled ? '✓ Filled' : '● Active'}
+                  </Pill>
+                </div>
+              </div>
+              <div style={{ padding: '16px 20px' }}>
+                {/* Required certs */}
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, color: C.gray, fontWeight: 600, marginBottom: 6 }}>Required Credentials:</div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {p.certs.map(cert => (
+                      <div key={cert} style={{ display: 'flex', alignItems: 'center', gap: 5, background: `${p.color}12`, border: `1px solid ${p.color}30`, borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: p.color }}>
+                        ✦ {cert}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Match counter */}
+                {!p.filled && (
+                  <div style={{ background: C.tealLt, border: `1px solid #A7F3D0`, borderRadius: 10, padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ fontSize: 22, fontWeight: 900, color: C.teal, lineHeight: 1 }}>{p.matched}</div>
+                      <div style={{ fontSize: 11, color: '#065F46', fontWeight: 600 }}>candidates currently qualified</div>
+                    </div>
+                    <button className="btn" style={{ background: C.teal, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 700 }}>View Matches →</button>
+                  </div>
+                )}
+
+                {/* Pipeline */}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {['Matched', 'Contacted', 'Interviewed', 'Hired'].map((stage, si) => (
+                    <div key={stage} style={{ flex: 1, textAlign: 'center' }}>
+                      <div style={{ fontSize: 16, fontWeight: 900, color: si === 0 ? p.color : si === 3 && p.filled ? C.green : '#D1D5DB' }}>
+                        {si === 0 ? p.matched : si === 1 ? Math.floor(p.matched * .5) : si === 2 ? Math.floor(p.matched * .2) : p.filled ? 1 : 0}
+                      </div>
+                      <div style={{ fontSize: 9, color: '#9CA3AF', fontWeight: 600, letterSpacing: '.3px' }}>{stage.toUpperCase()}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══ SCREEN 5: REPORTS & ROI ══ */
+function ReportsROI() {
+  const kpis = [
+    { label: 'Avg. Cost-Per-Hire (SkillBridge)', value: '₱58,000', sub: 'vs ₱95,000 traditional', color: C.teal, delta: '−39%' },
+    { label: 'Avg. Time-to-Fill', value: '12 days', sub: 'vs 38 days traditional', color: C.sky, delta: '−68%' },
+    { label: 'Internal Mobility Rate', value: '34%', sub: 'of promotions filled internally', color: C.purple, delta: '+12pp YoY' },
+    { label: 'Attrition (active users)', value: '8%', sub: 'vs 22% company baseline', color: C.green, delta: '−14pp' },
+  ];
+
+  const months = ['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'];
+  const hireData = [2, 3, 4, 6, 8, 9];
+  const maxH = Math.max(...hireData);
+
+  return (
+    <div className="fade-in">
+      <TopBar title="Reports & ROI" subtitle="Quarterly performance and recruitment impact" right={
+        <button className="btn" style={{ background: C.navy, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>{Ico.Download} Export PDF</button>
+      } />
+      <div style={{ padding: '24px 28px', maxWidth: 1080 }}>
+
+        {/* KPI tiles */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 20 }}>
+          {kpis.map(k => (
+            <Card key={k.label} style={{ padding: '18px 20px' }}>
+              <div style={{ fontSize: 26, fontWeight: 900, color: k.color, letterSpacing: '-.5px', lineHeight: 1, marginBottom: 4 }}>{k.value}</div>
+              <div style={{ fontSize: 12, color: '#374151', fontWeight: 600, marginBottom: 4 }}>{k.label}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Pill color={k.color} bg={`${k.color}15`} size="xs">{k.delta}</Pill>
+                <span style={{ fontSize: 10, color: '#9CA3AF' }}>{k.sub}</span>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16, marginBottom: 16 }}>
+
+          {/* Bar chart: hires via SkillBridge */}
+          <Card style={{ padding: 22 }} hover={false}>
+            <SectionHeader title="Hires via SkillBridge Pipeline" subtitle="Monthly placements from credentialed talent pool" />
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 140, paddingTop: 10 }}>
+              {hireData.map((v, i) => (
+                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: i === hireData.length - 1 ? C.sky : '#374151' }}>{v}</div>
+                  <div style={{ width: '100%', background: i === hireData.length - 1 ? C.sky : `${C.sky}40`, borderRadius: '6px 6px 0 0', height: `${(v / maxH) * 100}px`, transition: 'height .6s' }} />
+                  <div style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600 }}>{months[i]}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Cost comparison */}
+          <Card style={{ padding: 22 }} hover={false}>
+            <SectionHeader title="Cost Savings Summary" subtitle="Q1 2026 vs. same period last year" />
+            {[
+              { label: 'Traditional Recruitment Spend', value: 'PHP 855,000', color: '#EF4444', pct: 100 },
+              { label: 'SkillBridge Recruitment Spend', value: 'PHP 522,000', color: C.teal,    pct: 61  },
+            ].map(r => (
+              <div key={r.label} style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{r.label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: r.color }}>{r.value}</span>
+                </div>
+                <Bar pct={r.pct} color={r.color} height={10} />
+              </div>
+            ))}
+            <div style={{ background: C.tealLt, borderRadius: 10, padding: '12px 14px', textAlign: 'center', marginTop: 8 }}>
+              <div style={{ fontSize: 22, fontWeight: 900, color: C.teal }}>PHP 333,000</div>
+              <div style={{ fontSize: 12, color: '#065F46', fontWeight: 700 }}>saved in Q1 2026 alone</div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Completion & attrition */}
+        <Card style={{ padding: 22 }} hover={false}>
+          <SectionHeader title="Employee Outcome Tracking" subtitle="SkillBridge-enrolled employees vs. company baseline" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}>
+            {[
+              { label: 'Cert Completion Rate', sb: 74, base: 41, color: C.teal },
+              { label: 'Promoted Within 12 Months', sb: 34, base: 18, color: C.sky },
+              { label: 'Still Employed at 18 Months', sb: 92, base: 78, color: C.green },
+            ].map(m => (
+              <div key={m.label}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 12 }}>{m.label}</div>
+                <div style={{ marginBottom: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12 }}>
+                    <span style={{ color: m.color, fontWeight: 700 }}>SkillBridge users</span>
+                    <span style={{ fontWeight: 800, color: m.color }}>{m.sb}%</span>
+                  </div>
+                  <Bar pct={m.sb} color={m.color} height={10} />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12 }}>
+                    <span style={{ color: '#9CA3AF', fontWeight: 600 }}>Company baseline</span>
+                    <span style={{ fontWeight: 700, color: '#9CA3AF' }}>{m.base}%</span>
+                  </div>
+                  <Bar pct={m.base} color="#D1D5DB" height={10} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+/* ══ SCREEN 6: SETTINGS ══ */
+function Settings() {
+  const [notif, setNotif] = useState(true);
+  const [pipeline, setPipeline] = useState(true);
+  const [hris, setHris] = useState(false);
+
+  const Toggle = ({ on, onToggle }) => (
+    <div onClick={onToggle} style={{ width: 44, height: 24, borderRadius: 99, background: on ? C.sky : '#E5E7EB', cursor: 'pointer', position: 'relative', transition: 'background .2s', flexShrink: 0 }}>
+      <div style={{ position: 'absolute', top: 3, left: on ? 23 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .2s' }} />
+    </div>
+  );
+
+  return (
+    <div className="fade-in">
+      <TopBar title="Settings" subtitle="Manage your SkillBridge PH employer account" />
+      <div style={{ padding: '24px 28px', maxWidth: 680 }}>
+        <Card style={{ padding: 22, marginBottom: 16 }} hover={false}>
+          <div style={{ fontWeight: 800, color: '#111827', fontSize: 14, marginBottom: 14 }}>Account</div>
+          {[
+            ['Company', 'Stellar BPO Philippines, Inc.'],
+            ['Plan', 'Enterprise — 60 seats'],
+            ['Primary Contact', 'HR Director, talent@stellarbpo.com.ph'],
+            ['Member Since', 'October 2025'],
+          ].map(([k, v]) => (
+            <div key={k} style={{ display: 'flex', borderBottom: '1px solid #F3F4F6', padding: '10px 0', gap: 16 }}>
+              <div style={{ width: 160, fontSize: 12, color: '#9CA3AF', fontWeight: 600 }}>{k}</div>
+              <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#374151' }}>{v}</div>
+            </div>
+          ))}
+        </Card>
+
+        {[
+          { title: 'Notifications', items: [
+            { label: 'Candidate Match Alerts', sub: 'Notify when new candidates match your open roles', on: notif, set: setNotif },
+            { label: 'Talent Pipeline Updates', sub: 'Employee cert completions and status changes', on: pipeline, set: setPipeline },
+          ]},
+          { title: 'Integrations', items: [
+            { label: 'HRIS Sync (SAP / Workday)', sub: 'Auto-sync SkillBridge data to your HR system', on: hris, set: setHris },
+          ]},
+        ].map(g => (
+          <Card key={g.title} style={{ padding: 22, marginBottom: 16 }} hover={false}>
+            <div style={{ fontWeight: 800, color: '#111827', fontSize: 14, marginBottom: 14 }}>{g.title}</div>
+            {g.items.map(item => (
+              <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #F3F4F6', gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{item.label}</div>
+                  <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{item.sub}</div>
+                </div>
+                <Toggle on={item.on} onToggle={() => item.set(v => !v)} />
+              </div>
+            ))}
+          </Card>
+        ))}
+
+        <Card style={{ padding: 22 }} hover={false}>
+          <div style={{ fontWeight: 800, color: '#111827', fontSize: 14, marginBottom: 14 }}>Billing & Seats</div>
+          {['Manage Subscription', 'Add Seats', 'View Invoices', 'Cancel Plan'].map((a, i) => (
+            <button key={a} className="btn" style={{ display: 'block', width: '100%', textAlign: 'left', background: 'transparent', border: 'none', borderBottom: i < 3 ? '1px solid #F3F4F6' : 'none', padding: '11px 0', fontSize: 13, fontWeight: 600, color: i === 3 ? '#EF4444' : '#374151', cursor: 'pointer', fontFamily: 'inherit' }}>{a} →</button>
+          ))}
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+/* ══ APP ROOT ══ */
+function App() {
+  const [screen, setScreen] = useState('overview');
+  const SCREENS = {
+    overview:  <Overview />,
+    talent:    <TalentPool />,
+    workforce: <InternalWorkforce />,
+    postings:  <JobPostings />,
+    reports:   <ReportsROI />,
+    settings:  <Settings />,
+  };
+  return (
+    <div style={{ display: 'flex', height: '100vh', overflow: 'auto', fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <Sidebar active={screen} onNav={setScreen} />
+      <main style={{ flex: 1, overflowY: 'auto', background: '#F5F7FA' }}>
+        {SCREENS[screen]}
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
