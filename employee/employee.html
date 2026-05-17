@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkillBridge PH — AI Career Ecosystem</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #F0F4F8; color: #111827; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes pulseDot { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(1.5);} }
+
+    .fade-in   { animation: fadeUp .3s ease both; }
+    .pulse-dot { animation: pulseDot 1.8s ease-in-out infinite; }
+    .hover-lift { transition: transform .18s ease, box-shadow .18s ease; cursor: pointer; }
+    .hover-lift:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(30,58,95,.1); }
+    .btn { transition: filter .15s, transform .1s; cursor: pointer; font-family: inherit; }
+    .btn:hover { filter: brightness(1.06); }
+    .btn:active { transform: scale(.97); }
+    .nav-link { transition: color .15s; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState } = React;
+
+const C = {
+  navy:'#1E3A5F', teal:'#2A9D76', tealLt:'#E6F5F0',
+  gold:'#C89B3C', sky:'#2E75B6', skyLt:'#EAF3FB',
+  warn:'#D97706', gray:'#6B7280', grayLt:'#F3F4F6',
+  green:'#16A34A', greenLt:'#DCFCE7',
+  red:'#DC2626', purple:'#7C3AED', purpleLt:'#F5F3FF', bg:'#F0F4F8',
+};
+
+/* Brand logo SVG — kept because it IS the brand mark, not a UI icon */
+const Logo = () => (
+  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+    <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
+      <rect width="48" height="48" rx="11" fill="#2A9D76"/>
+      <path d="M10 36 Q14 20 24 18 Q34 16 38 10" stroke="white" strokeWidth="3.5" strokeLinecap="round" fill="none"/>
+      <circle cx="10" cy="36" r="4" fill="white" opacity="0.5"/>
+      <circle cx="34" cy="13" r="5" fill="#C89B3C"/>
+      <circle cx="34" cy="13" r="3" fill="#E8B84B"/>
+    </svg>
+    <div style={{ lineHeight:1 }}>
+      <div style={{ fontFamily:"'DM Serif Display', Georgia, serif", fontSize:18, display:'flex', alignItems:'baseline' }}>
+        <span style={{ color:C.navy }}>Skill</span>
+        <span style={{ color:C.teal }}>&nbsp;Bridge</span>
+        <span style={{ color:C.gold }}>&nbsp;PH</span>
+      </div>
+      <div style={{ fontSize:9.5, color:C.gray, fontWeight:500, marginTop:2, letterSpacing:'.2px' }}>A Talent Development Ecosystem</div>
+    </div>
+  </div>
+);
+
+const Avatar = ({ initials='MR', size=36, bg=C.teal, fs=13 }) => (
+  <div style={{ width:size, height:size, borderRadius:'50%', background:bg, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:800, fontSize:fs, flexShrink:0, letterSpacing:'.3px' }}>{initials}</div>
+);
+
+/* Text tag — colored label, zero icon */
+const Tag = ({ children, color, bg, border }) => (
+  <span style={{ color, background:bg, border:border?`1px solid ${border}`:undefined, borderRadius:6, padding:'3px 10px', fontSize:11, fontWeight:700, whiteSpace:'nowrap', letterSpacing:'.2px', display:'inline-block' }}>{children}</span>
+);
+
+const Bar = ({ pct, color=C.teal, h=8, bg='#E5E7EB' }) => (
+  <div style={{ width:'100%', height:h, background:bg, borderRadius:99, overflow:'hidden' }}>
+    <div style={{ width:`${pct}%`, height:'100%', background:color, borderRadius:99, transition:'width .6s cubic-bezier(.4,0,.2,1)' }}/>
+  </div>
+);
+
+const Ring = ({ pct, size=100, stroke=8, color=C.teal, bg='#E5E7EB', children }) => {
+  const r=(size-stroke)/2, circ=2*Math.PI*r, dash=circ*(1-pct/100);
+  return (
+    <div style={{ position:'relative', width:size, height:size, display:'inline-flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+      <svg width={size} height={size} style={{ position:'absolute', top:0, left:0, transform:'rotate(-90deg)' }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={bg} strokeWidth={stroke}/>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeDasharray={circ} strokeDashoffset={dash} strokeLinecap="round" style={{ transition:'stroke-dashoffset .8s cubic-bezier(.4,0,.2,1)' }}/>
+      </svg>
+      <div style={{ position:'relative', zIndex:1, textAlign:'center' }}>{children}</div>
+    </div>
+  );
+};
+
+const Card = ({ children, style={}, hover=true }) => (
+  <div className={hover?'hover-lift':''} style={{ background:'#fff', borderRadius:14, border:'1px solid #E2E8F0', boxShadow:'0 1px 3px rgba(0,0,0,.04)', ...style }}>{children}</div>
+);
+
+const SectionHeader = ({ title, subtitle, action }) => (
+  <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:20, gap:12 }}>
+    <div>
+      <h2 style={{ fontSize:18, fontWeight:800, color:'#111827', letterSpacing:'-.3px' }}>{title}</h2>
+      {subtitle && <p style={{ fontSize:12, color:C.gray, marginTop:3 }}>{subtitle}</p>}
+    </div>
+    {action}
+  </div>
+);
+
+/* TOP NAV */
+const NAV = [
+  { id:'dashboard',   label:'Dashboard'   },
+  { id:'careermap',   label:'Career Map'  },
+  { id:'modules',     label:'Learning'    },
+  { id:'credentials', label:'Credentials' },
+  { id:'jobs',        label:'Job Matches' },
+];
+
+function TopNav({ active, onNav }) {
+  return (
+    <nav style={{ background:'#fff', borderBottom:'1px solid #E2E8F0', position:'sticky', top:0, zIndex:40, boxShadow:'0 1px 4px rgba(0,0,0,.05)' }}>
+      <div style={{ display:'flex', alignItems:'center', padding:'0 40px', height:60, maxWidth:1280, margin:'0 auto', width:'100%' }}>
+        <div style={{ flexShrink:0, marginRight:'auto' }}><Logo/></div>
+        <div style={{ display:'flex', alignItems:'center', gap:2 }}>
+          {NAV.map(n => {
+            const on = active===n.id;
+            return (
+              <button key={n.id} onClick={()=>onNav(n.id)} className="nav-link btn"
+                style={{ padding:'0 18px', height:60, border:'none', background:'transparent', color:on?C.navy:'#6B7280', fontWeight:on?700:500, fontSize:14, fontFamily:'inherit', position:'relative', borderBottom:on?`2.5px solid ${C.teal}`:'2.5px solid transparent' }}>
+                {n.label}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:12, marginLeft:'auto' }}>
+          {/* Home link */}
+          <a href="../index.html" className="btn" style={{ padding:'6px 14px', borderRadius:8, background:'#F8FAFC', border:'1px solid #E2E8F0', fontSize:12, fontWeight:700, color:C.gray, textDecoration:'none' }}>
+            ← Home
+          </a>
+          {/* Notification count as text chip — no bell icon */}
+          <button className="btn" style={{ position:'relative', padding:'6px 14px', borderRadius:8, background:'#F8FAFC', border:'1px solid #E2E8F0', fontSize:12, fontWeight:700, color:C.gray }}>
+            Alerts
+            <span style={{ position:'absolute', top:-5, right:-5, minWidth:17, height:17, borderRadius:99, background:C.red, border:'2px solid #fff', display:'inline-flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:9, fontWeight:900, padding:'0 4px' }}>1</span>
+          </button>
+          <button onClick={()=>onNav('profile')} className="btn" style={{ width:36, height:36, borderRadius:'50%', background:C.teal, border:'none', color:'#fff', fontWeight:800, fontSize:13, letterSpacing:'.3px' }}>
+            MR
+          </button>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+const PageHeader = ({ title, subtitle, right }) => (
+  <div style={{ background:'#fff', borderBottom:'1px solid #E2E8F0', padding:'20px 40px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+    <div>
+      <div style={{ fontSize:20, fontWeight:800, color:'#111827', letterSpacing:'-.3px' }}>{title}</div>
+      {subtitle && <div style={{ fontSize:12, color:C.gray, marginTop:3 }}>{subtitle}</div>}
+    </div>
+    {right && <div style={{ display:'flex', alignItems:'center', gap:10 }}>{right}</div>}
+  </div>
+);
+
+/* ══ SCREEN 1 — DASHBOARD ══ */
+const LEVELS = ['Awareness','Foundational','Working','Advanced','Expert'];
+const COMPETENCIES = [
+  { name:'Communication',  level:4, color:C.teal   },
+  { name:'SQL',            level:2, color:C.sky    },
+  { name:'Python',         level:1, color:C.purple },
+  { name:'Data Analytics', level:2, color:C.warn   },
+  { name:'Cybersecurity',  level:1, color:C.red    },
+];
+
+function Dashboard() {
+  return (
+    <div className="fade-in">
+      <div style={{ maxWidth:1100, margin:'0 auto', padding:'56px 40px 60px' }}>
+
+        {/* HERO — pure typography, no icons */}
+        <div style={{ textAlign:'center', marginBottom:44 }}>
+          <h1 style={{ fontFamily:"'DM Serif Display', Georgia, serif", fontSize:52, fontWeight:400, color:'#111827', letterSpacing:'-.8px', lineHeight:1.15, marginBottom:14 }}>
+            Maligayang pagdating, Maria!
+          </h1>
+          <p style={{ fontSize:17, color:C.gray, marginBottom:28, lineHeight:1.6 }}>
+            You are <strong style={{ color:C.teal, fontSize:20 }}>35%</strong> toward your <strong style={{ color:'#111827' }}>Data Analyst</strong> certification. Keep going — <em>kaya mo!</em>
+          </p>
+          {/* Stat chips — number bold, label light, no icons */}
+          <div style={{ display:'flex', justifyContent:'center', gap:10, flexWrap:'wrap' }}>
+            {[
+              { num:'7',   unit:'day streak',         c:'#92400E', bg:'#FEF3C7', border:'#FDE68A' },
+              { num:'280', unit:'XP this week',       c:'#1E40AF', bg:'#EFF6FF', border:'#BFDBFE' },
+              { num:'2',   unit:'badges earned',      c:'#5B21B6', bg:'#F5F3FF', border:'#DDD6FE' },
+              { num:'3',   unit:'days to checkpoint', c:'#991B1B', bg:'#FEF2F2', border:'#FECACA' },
+            ].map(p=>(
+              <span key={p.unit} style={{ display:'inline-flex', alignItems:'baseline', gap:5, background:p.bg, border:`1px solid ${p.border}`, borderRadius:99, padding:'8px 20px' }}>
+                <span style={{ fontSize:17, fontWeight:900, color:p.c }}>{p.num}</span>
+                <span style={{ fontSize:13, fontWeight:500, color:p.c }}>{p.unit}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* ALERT — left accent stripe + text, no icon */}
+        <div style={{ background:'#FFFBEB', border:'1.5px solid #FCD34D', borderLeft:`4px solid ${C.warn}`, borderRadius:'0 12px 12px 0', padding:'14px 20px', marginBottom:28, display:'flex', alignItems:'center', gap:16 }}>
+          <div style={{ flex:1 }}>
+            <span style={{ fontWeight:800, color:'#92400E', fontSize:13, textTransform:'uppercase', letterSpacing:'.5px' }}>Due in 3 days — </span>
+            <span style={{ fontWeight:600, color:'#78350F', fontSize:13 }}>Validation Assessment: M1 Excel Fundamentals. Complete your review before April 4 to unlock Module 2.</span>
+          </div>
+          <button className="btn" style={{ flexShrink:0, background:'#92400E', color:'#fff', border:'none', borderRadius:8, padding:'9px 18px', fontSize:12, fontWeight:700 }}>Prepare Now</button>
+        </div>
+
+        {/* MAIN CARDS */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1.35fr', gap:24, marginBottom:24 }}>
+
+          <Card style={{ padding:30 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+              <span style={{ fontSize:14, fontWeight:700, color:'#111827' }}>Skill Profile</span>
+              <Tag color={C.teal} bg={C.tealLt} border="#A7F3D0">Updated today</Tag>
+            </div>
+            <div style={{ display:'flex', alignItems:'center', gap:20, marginBottom:24 }}>
+              <Ring pct={72} size={96} stroke={9} color={C.teal}>
+                <div>
+                  <div style={{ fontSize:22, fontWeight:900, color:C.navy }}>72%</div>
+                  <div style={{ fontSize:8.5, color:C.gray, fontWeight:700, letterSpacing:'.8px' }}>COMPLETE</div>
+                </div>
+              </Ring>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:12, color:C.gray, marginBottom:10, fontWeight:500 }}>Profile Completeness</div>
+                <div style={{ marginBottom:7 }}><Tag color={C.teal} bg={C.tealLt} border="#A7F3D0">+3 certs via Credly</Tag></div>
+                <Tag color={C.sky} bg={C.skyLt} border="#BFDBFE">AI-assessed</Tag>
+              </div>
+            </div>
+            {COMPETENCIES.map(c=>(
+              <div key={c.name} style={{ marginBottom:12 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
+                  <span style={{ fontSize:12, fontWeight:600, color:'#374151' }}>{c.name}</span>
+                  <span style={{ fontSize:11, fontWeight:700, color:c.color }}>Level {c.level} — {LEVELS[c.level-1]}</span>
+                </div>
+                <Bar pct={c.level/5*100} color={c.color} h={7}/>
+              </div>
+            ))}
+            <div style={{ fontSize:10, color:'#9CA3AF', marginTop:8, textAlign:'center', lineHeight:1.8 }}>
+              1 Awareness · 2 Foundational · 3 Working · 4 Advanced · 5 Expert
+            </div>
+            <div style={{ fontSize:10.5, color:'#9CA3AF', marginTop:4, textAlign:'right', fontWeight:500 }}>Showing 5 of 12 assessed dimensions</div>
+            <button className="btn" style={{ marginTop:16, width:'100%', border:`1.5px solid #E2E8F0`, background:'transparent', color:C.navy, borderRadius:9, padding:'10px', fontSize:13, fontWeight:700 }}>
+              View Full Assessment →
+            </button>
+          </Card>
+
+          <Card style={{ padding:30, display:'flex', flexDirection:'column' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
+              <span style={{ fontSize:14, fontWeight:700, color:'#111827' }}>Active Pathway</span>
+              <span style={{ fontSize:26, fontWeight:900, color:C.teal }}>35%</span>
+            </div>
+            <div style={{ fontSize:16, fontWeight:800, color:'#111827', marginBottom:4 }}>Customer Service Agent → Data Analyst</div>
+            <div style={{ fontSize:12, color:C.gray, marginBottom:16 }}>Est. completion: September 2026 · 5 months remaining</div>
+            <Bar pct={35} color={C.teal} h={10}/>
+
+            {/* Step tracker — M-numbers only, states conveyed by color/border */}
+            <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:20 }}>
+              <div style={{ width:36, height:36, borderRadius:'50%', background:C.teal, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:11, fontWeight:900, flexShrink:0 }}>M1</div>
+              <div style={{ height:2, background:C.teal, flex:1 }}/>
+              <div style={{ position:'relative', flexShrink:0 }}>
+                <div style={{ width:36, height:36, borderRadius:'50%', background:'#EFF6FF', border:`2.5px solid ${C.sky}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:900, color:C.sky }}>M2</div>
+                <span className="pulse-dot" style={{ position:'absolute', top:-2, right:-2, width:9, height:9, borderRadius:'50%', background:C.sky, border:'2px solid #fff' }}/>
+              </div>
+              {['M3','M4','M5','M6'].map(m=>(
+                <React.Fragment key={m}>
+                  <div style={{ height:2, background:'#E2E8F0', flex:1 }}/>
+                  <div style={{ width:36, height:36, borderRadius:'50%', background:'#F3F4F6', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#9CA3AF', flexShrink:0 }}>{m}</div>
+                </React.Fragment>
+              ))}
+            </div>
+            <div style={{ display:'flex', fontSize:10.5, color:'#9CA3AF', marginTop:7, fontWeight:500 }}>
+              <span style={{ marginLeft:4 }}>Completed</span>
+              <span style={{ margin:'0 auto' }}>In Progress</span>
+              <span>Locked</span>
+            </div>
+
+            {/* Milestone — accent left border instead of icon */}
+            <div style={{ marginTop:20, background:C.tealLt, borderLeft:`4px solid ${C.teal}`, borderRadius:'0 10px 10px 0', padding:'13px 16px' }}>
+              <div style={{ fontSize:10, fontWeight:800, color:C.teal, textTransform:'uppercase', letterSpacing:'.7px', marginBottom:3 }}>Next Milestone</div>
+              <div style={{ fontSize:14, fontWeight:800, color:C.navy }}>SQL Fundamentals Badge</div>
+              <div style={{ fontSize:11, color:C.gray, marginTop:2 }}>Complete M2 + pass checkpoint to unlock</div>
+            </div>
+          </Card>
+        </div>
+
+        {/* BOTTOM ROW */}
+        <div style={{ display:'grid', gridTemplateColumns:'1.6fr 1fr', gap:24 }}>
+          <Card style={{ padding:26 }}>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                <Tag color={C.sky} bg={C.skyLt} border="#BFDBFE">IN PROGRESS</Tag>
+                <span style={{ fontSize:11, color:'#9CA3AF', fontWeight:500 }}>Module 2 of 6</span>
+              </div>
+              <div style={{ fontSize:16, fontWeight:800, color:'#111827', marginBottom:4 }}>M2 — Introduction to SQL</div>
+              <div style={{ fontSize:12, color:C.gray, marginBottom:12, lineHeight:1.5 }}>SELECT, WHERE, JOINs, aggregation functions · Credly badge upon completion</div>
+              <div style={{ fontSize:12, color:C.gray, marginBottom:14, fontWeight:500 }}>25 min · Week 1 of 2</div>
+              <Bar pct={20} color={C.sky} h={7} bg="#DBEAFE"/>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:6, marginBottom:16 }}>
+                <span style={{ fontSize:12, fontWeight:800, color:C.sky }}>20% complete</span>
+                <button className="btn" style={{ background:C.teal, color:'#fff', border:'none', borderRadius:9, padding:'10px 20px', fontSize:13, fontWeight:700 }}>Continue Learning →</button>
+              </div>
+              {/* Fix 5 — Lesson structure */}
+              <div style={{ borderTop:'1px solid #F3F4F6', paddingTop:14 }}>
+                <div style={{ fontSize:10, fontWeight:800, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'.6px', marginBottom:8 }}>What's in each lesson</div>
+                {[
+                  { type:'Video walkthrough',   time:'5–10 min',  note:'BPO-contextualized examples' },
+                  { type:'Written guide',        time:'Reference', note:'Downloadable for offline use' },
+                  { type:'Practice exercise',    time:'15–20 min', note:'Real call center datasets'    },
+                  { type:'Self-check',           time:'3–5 Qs',    note:'Formative, not gated'         },
+                ].map(l=>(
+                  <div key={l.type} style={{ display:'flex', alignItems:'baseline', gap:8, marginBottom:5 }}>
+                    <span style={{ fontSize:11, fontWeight:600, color:'#374151', minWidth:140 }}>{l.type}</span>
+                    <span style={{ fontSize:10, fontWeight:700, color:C.sky, minWidth:60 }}>{l.time}</span>
+                    <span style={{ fontSize:10, color:'#9CA3AF' }}>{l.note}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+
+          {/* This Week — big numbers do all the work */}
+          <Card style={{ padding:26 }}>
+            <div style={{ fontWeight:800, fontSize:14, color:'#111827', marginBottom:20 }}>This Week</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+              {[
+                { value:'4.5h', label:'Hours Learned',     color:C.teal   },
+                { value:'1',    label:'Modules Completed', color:C.sky    },
+                { value:'280',  label:'XP Earned',         color:C.warn   },
+                { value:'1',    label:'Workshop Attended',  color:C.purple },
+              ].map(s=>(
+                <div key={s.label} style={{ background:C.grayLt, borderRadius:10, padding:'14px' }}>
+                  <div style={{ fontSize:28, fontWeight:900, color:s.color, lineHeight:1 }}>{s.value}</div>
+                  <div style={{ fontSize:11, color:C.gray, marginTop:4, fontWeight:500 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══ SCREEN 2 — CAREER MAP ══ */
+const PATHS = [
+  { to:'Data Analyst',                  duration:'6–9 months', stars:3, tag:'Recommended', tagC:C.teal,   tagBg:C.tealLt,  btnC:C.teal,   salary:'₱35K–₱55K/mo', demand:'High Demand',  demandC:C.teal,   desc:'Leverage BPO customer insights to analyze business data and drive strategic decisions.',                     certs:['Google Data Analytics','IBM Data Analyst'],
+    skillGaps:[
+      { skill:'SQL',               have:2, need:5 },
+      { skill:'Python',            have:1, need:3 },
+      { skill:'Data Visualization',have:1, need:4 },
+      { skill:'Excel/Sheets',      have:3, need:5 },
+    ]
+  },
+  { to:'Business Intelligence Analyst', duration:'7 months',   stars:4, tag:'Good Match',  tagC:C.sky,    tagBg:C.skyLt,   btnC:C.sky,    salary:'₱45K–₱70K/mo', demand:'Growing',      demandC:C.sky,    desc:'Build dashboards and reports that help executives make faster, data-backed decisions.',                      certs:['Microsoft Power BI','Google Data Analytics'],
+    skillGaps:[
+      { skill:'Power BI',          have:1, need:5 },
+      { skill:'SQL',               have:2, need:4 },
+      { skill:'Data Storytelling', have:2, need:4 },
+      { skill:'Python',            have:1, need:3 },
+    ]
+  },
+  { to:'Product Manager',               duration:'8 months',   stars:5, tag:'Advanced',    tagC:C.purple, tagBg:C.purpleLt,btnC:C.purple, salary:'₱60K–₱100K/mo',demand:'Competitive',  demandC:C.warn,   desc:'Apply your deep understanding of customer pain points to own product strategy and roadmaps.',                 certs:['Google Project Management','Agile Scrum Master'],
+    skillGaps:[
+      { skill:'Product Strategy',  have:1, need:4 },
+      { skill:'Agile/Scrum',       have:1, need:4 },
+      { skill:'Data Analysis',     have:2, need:3 },
+      { skill:'Stakeholder Mgmt',  have:2, need:5 },
+    ]
+  },
+];
+
+function CareerMap() {
+  return (
+    <div className="fade-in">
+      <PageHeader title="Career Map" subtitle="AI-generated pathways based on your skill profile and imported certifications"/>
+      <div style={{ maxWidth:1100, margin:'0 auto', padding:'40px 40px' }}>
+        <div style={{ borderLeft:`4px solid ${C.teal}`, background:'#F8FFFE', borderRadius:'0 12px 12px 0', padding:'14px 20px', marginBottom:28, display:'flex', alignItems:'center', justifyContent:'space-between', gap:16 }}>
+          <div style={{ flex:1 }}>
+            <div style={{ fontWeight:800, fontSize:13, color:'#111827', marginBottom:2 }}>
+              AI analyzed <strong style={{ color:C.teal }}>847</strong> BPO-to-Tech career transitions in the Philippines
+            </div>
+            <div style={{ fontSize:12, color:C.gray }}>Maria Reyes · Customer Service Agent · 3 yrs · Metro Manila · 3 certs via Credly · Last assessed: Mar 28, 2026</div>
+          </div>
+          <button className="btn" style={{ flexShrink:0, border:`1.5px solid #E2E8F0`, background:'#fff', color:C.navy, borderRadius:9, padding:'8px 16px', fontSize:12, fontWeight:700 }}>Retake Assessment</button>
+        </div>
+
+        <SectionHeader title="Your AI-Generated Career Pathways" subtitle="Based on your Skill Profile and 3 imported certifications"/>
+        <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+          {PATHS.map((p,i)=>(
+            <Card key={i} style={{ padding:0, overflow:'hidden', border:i===0?`2px solid ${C.teal}`:'1px solid #E2E8F0' }}>
+              <div style={{ display:'flex' }}>
+                <div style={{ width:5, background:p.btnC, flexShrink:0 }}/>
+                <div style={{ flex:1, padding:'22px 26px' }}>
+                  <div style={{ display:'flex', alignItems:'flex-start', gap:16, flexWrap:'wrap' }}>
+                    <div style={{ flex:1, minWidth:260 }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', marginBottom:6 }}>
+                        <h3 style={{ fontSize:15, fontWeight:800, color:'#111827' }}>Customer Service Agent → {p.to}</h3>
+                        <Tag color={p.tagC} bg={p.tagBg}>{p.tag}</Tag>
+                      </div>
+                      <p style={{ fontSize:13, color:C.gray, marginBottom:14, maxWidth:520, lineHeight:1.6 }}>{p.desc}</p>
+                      <div style={{ display:'flex', gap:22, flexWrap:'wrap', fontSize:12, marginBottom:14 }}>
+                        <span style={{ color:C.gray }}>Duration: <strong style={{ color:'#374151' }}>{p.duration}</strong></span>
+                        <span style={{ fontWeight:700, color:p.demandC }}>{p.demand}</span>
+                        <span style={{ color:C.gray }}>Salary: <strong style={{ color:'#111827' }}>{p.salary}</strong></span>
+                        <span style={{ color:C.gray }}>Difficulty:&nbsp;
+                          {Array.from({length:5},(_,j)=><span key={j} style={{ color:j<p.stars?C.warn:'#D1D5DB', fontSize:13 }}>★</span>)}
+                        </span>
+                      </div>
+                      <div style={{ marginBottom:14 }}>
+                        <div style={{ fontSize:11, fontWeight:700, color:'#374151', marginBottom:8, textTransform:'uppercase', letterSpacing:'.4px' }}>Skill Gap Analysis</div>
+                        {p.skillGaps.map(sg=>{
+                          const gap=sg.need-sg.have;
+                          const gapColor=gap>=3?C.red:gap===2?C.warn:C.green;
+                          const fillPct=(sg.have/sg.need)*100;
+                          return (
+                            <div key={sg.skill} style={{ display:'grid', gridTemplateColumns:'130px 1fr 80px', alignItems:'center', gap:8, marginBottom:6 }}>
+                              <span style={{ fontSize:11, fontWeight:600, color:'#374151', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{sg.skill}</span>
+                              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                                <span style={{ fontSize:10, color:'#9CA3AF', whiteSpace:'nowrap' }}>L{sg.have}→L{sg.need}</span>
+                                <div style={{ flex:1, height:6, background:'#F3F4F6', borderRadius:99, overflow:'hidden' }}>
+                                  <div style={{ width:`${fillPct}%`, height:'100%', background:gapColor, borderRadius:99 }}/>
+                                </div>
+                              </div>
+                              <span style={{ fontSize:10, fontWeight:700, color:gapColor, textAlign:'right', whiteSpace:'nowrap' }}>Gap: {gap}</span>
+                            </div>
+                          );
+                        })}
+                        <div style={{ fontSize:10, color:'#9CA3AF', marginTop:4 }}>+ {p.skillGaps.length > 4 ? 0 : Math.max(0, 8 - p.skillGaps.length)} more skills assessed</div>
+                      </div>
+                      <div style={{ display:'flex', gap:6, flexWrap:'wrap', alignItems:'center' }}>
+                        <span style={{ fontSize:11, color:C.gray, fontWeight:600 }}>Recommended certs:</span>
+                        {p.certs.map(c=><span key={c} style={{ background:'#F3F4F6', color:'#374151', borderRadius:6, padding:'2px 9px', fontSize:11, fontWeight:600 }}>{c}</span>)}
+                      </div>
+                    </div>
+                    <div style={{ display:'flex', flexDirection:'column', gap:8, alignItems:'flex-end', flexShrink:0 }}>
+                      <button className="btn" style={{ background:p.btnC, color:'#fff', border:'none', borderRadius:9, padding:'11px 22px', fontSize:13, fontWeight:700, whiteSpace:'nowrap' }}>{i===0?'Continue Path →':'View Path →'}</button>
+                      {i===0 && <Tag color={C.teal} bg={C.tealLt} border="#A7F3D0">Active</Tag>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══ SCREEN 3 — LEARNING MODULES ══ */
+const MODULES = [
+  { n:1, title:'Excel & Google Sheets Fundamentals', weeks:2, status:'Completed',   pct:100, cert:'Excel Fundamentals – BPO Track',
+    workshopStatus:'passed', workshopDate:'Apr 2, 2026', facilitator:'Senior Analyst, Accenture BGC' },
+  { n:2, title:'Introduction to SQL',                weeks:2, status:'In Progress', pct:20,  cert:'SQL Fundamentals Badge',
+    workshopStatus:'upcoming', workshopDate:'Apr 14, 2026', workshopTime:'6:00 PM', facilitator:'Senior Analyst, Concentrix BGC', cohort:'10–20 learners' },
+  { n:3, title:'Python for Beginners',               weeks:3, status:'Locked',      pct:0,   cert:'Python Basics Certificate',
+    workshopStatus:'tbd' },
+  { n:4, title:'Data Visualization',                 weeks:2, status:'Locked',      pct:0,   cert:'Data Viz Badge',
+    workshopStatus:'tbd' },
+  { n:5, title:'Statistics & Analytics Thinking',    weeks:2, status:'Locked',      pct:0,   cert:'Analytics Fundamentals',
+    workshopStatus:'tbd' },
+  { n:6, title:'Capstone: BPO Data Project',         weeks:3, status:'Locked',      pct:0,   cert:'BPO Data Analyst Capstone Badge',
+    workshopStatus:'tbd' },
+];
+const MOD_S = {
+  'Completed':   { bg:C.greenLt, border:`1.5px solid #A7F3D0`, numBg:C.green,  tc:C.green,  tb:C.greenLt },
+  'In Progress': { bg:'#EFF6FF', border:`1.5px solid #BFDBFE`, numBg:C.sky,    tc:C.sky,    tb:C.skyLt   },
+  'Locked':      { bg:'#F9FAFB', border:`1px solid #E5E7EB`,   numBg:'#D1D5DB',tc:'#9CA3AF',tb:'#F3F4F6' },
+};
+
+function LearningModules() {
+  return (
+    <div className="fade-in">
+      <PageHeader title="Learning Modules" subtitle="Customer Service Agent → Data Analyst"/>
+      <div style={{ maxWidth:1100, margin:'0 auto', padding:'40px 40px' }}>
+        <Card style={{ padding:'20px 26px', marginBottom:20 }} hover={false}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+            <div>
+              <div style={{ fontWeight:800, color:'#111827', fontSize:14 }}>Pathway Progress</div>
+              <div style={{ fontSize:12, color:C.gray, marginTop:2 }}>On track · Completion target: September 2026</div>
+            </div>
+            <div style={{ fontSize:30, fontWeight:900, color:C.teal }}>35%</div>
+          </div>
+          <Bar pct={35} color={C.teal} h={10}/>
+          <div style={{ display:'flex', gap:24, marginTop:12 }}>
+            <span style={{ fontSize:12, fontWeight:700, color:C.green }}>1 module fully complete (both parts passed)</span>
+            <span style={{ fontSize:12, fontWeight:700, color:C.sky }}>1 module in Part A</span>
+            <span style={{ fontSize:12, fontWeight:700, color:'#9CA3AF' }}>4 Locked</span>
+          </div>
+        </Card>
+
+        {/* How it works callout */}
+        <div style={{ background:'#F8FFFE', border:`1.5px solid ${C.teal}40`, borderLeft:`4px solid ${C.teal}`, borderRadius:'0 10px 10px 0', padding:'12px 18px', marginBottom:20, fontSize:12, color:'#374151' }}>
+          <strong style={{ color:C.navy }}>How modules work:</strong> Complete <strong>Part A</strong> self-paced lessons → Attend and pass the <strong>Part B</strong> Application Workshop → Advance to next module.
+        </div>
+
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+          {MODULES.map(m=>{
+            const s=MOD_S[m.status], locked=m.status==='Locked', inProg=m.status==='In Progress', done=m.status==='Completed';
+            return (
+              <div key={m.n} className={locked?'':'hover-lift'}
+                style={{ background:s.bg, border:s.border, borderRadius:13, padding:'20px 22px', opacity:locked?.65:1, cursor:locked?'default':'pointer' }}>
+                {/* Header row */}
+                <div style={{ display:'flex', alignItems:'flex-start', gap:14, marginBottom:14 }}>
+                  <div style={{ position:'relative', width:44, height:44, borderRadius:12, background:s.numBg, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:900, fontSize:14, flexShrink:0 }}>
+                    M{m.n}
+                    {inProg && <span className="pulse-dot" style={{ position:'absolute', top:-3, right:-3, width:10, height:10, borderRadius:'50%', background:C.sky, border:'2px solid #EFF6FF' }}/>}
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+                      <span style={{ fontSize:10, fontWeight:700, color:'#9CA3AF', letterSpacing:'.5px' }}>MODULE {m.n}</span>
+                      <Tag color={s.tc} bg={s.tb}>{m.status}</Tag>
+                    </div>
+                    <div style={{ fontSize:14, fontWeight:700, color:locked?'#9CA3AF':'#111827' }}>{m.title}</div>
+                    {!locked && <div style={{ fontSize:11, color:'#9CA3AF', marginTop:2 }}>{m.cert}</div>}
+                  </div>
+                </div>
+
+                {/* PART A */}
+                <div style={{ borderTop:'1px solid #E5E7EB', paddingTop:12, marginBottom:10 }}>
+                  <div style={{ fontSize:10, fontWeight:800, color:'#374151', letterSpacing:'.6px', textTransform:'uppercase', marginBottom:6 }}>Part A — Self-Paced</div>
+                  <div style={{ fontSize:11, color:C.gray, marginBottom:locked?0:8 }}>{m.weeks} weeks · 15–30 min/day</div>
+                  {!locked && (
+                    <>
+                      <Bar pct={m.pct} color={inProg?C.sky:C.green} h={6} bg={inProg?'#DBEAFE':'#D1FAE5'}/>
+                      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:4 }}>
+                        <span style={{ fontSize:11, fontWeight:800, color:inProg?C.sky:C.green }}>{m.pct}% complete</span>
+                        {!done && <button className="btn" style={{ background:inProg?C.sky:C.teal, color:'#fff', border:'none', borderRadius:7, padding:'6px 12px', fontSize:11, fontWeight:700 }}>
+                          {inProg?'Continue →':'Start'}
+                        </button>}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* PART B — Workshop */}
+                <div style={{ borderTop:'1px solid #E5E7EB', paddingTop:12 }}>
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
+                    <div style={{ fontSize:10, fontWeight:800, color:'#374151', letterSpacing:'.6px', textTransform:'uppercase' }}>Part B — Application Workshop</div>
+                    {m.workshopStatus==='upcoming' && <Tag color={C.sky} bg={C.skyLt} border="#BFDBFE">Upcoming</Tag>}
+                    {m.workshopStatus==='passed' && <Tag color={C.green} bg={C.greenLt} border="#A7F3D0">Passed</Tag>}
+                    {m.workshopStatus==='tbd' && <Tag color='#9CA3AF' bg='#F3F4F6'>Locked</Tag>}
+                  </div>
+                  {m.workshopStatus==='passed' && (
+                    <div style={{ fontSize:11, color:C.green, fontWeight:600 }}>Workshop Passed — {m.workshopDate}</div>
+                  )}
+                  {m.workshopStatus==='upcoming' && (
+                    <div style={{ fontSize:11, color:'#374151', lineHeight:1.7 }}>
+                      <div>Cohort: <strong>{m.workshopDate} · {m.workshopTime}</strong></div>
+                      <div style={{ color:C.gray }}>Facilitator: {m.facilitator}</div>
+                      <div style={{ color:C.gray }}>{m.cohort} · 90 min</div>
+                      <button className="btn" style={{ marginTop:8, background:'transparent', border:`1.5px solid ${C.sky}`, color:C.sky, borderRadius:7, padding:'6px 14px', fontSize:11, fontWeight:700 }}>Reserve Spot</button>
+                    </div>
+                  )}
+                  {m.workshopStatus==='tbd' && (
+                    <div style={{ fontSize:11, color:'#9CA3AF' }}>Workshop date TBD — complete Part A to unlock</div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══ SCREEN 4 — CREDENTIALS ══ */
+const EARNED = [
+  { name:'Google IT Support Certificate',  skill:'IT Support & Networking', issued:'January 2025', issuer:'SkillBridge PH × Google',     color:'#4285F4', credlyUrl:true  },
+  { name:'Excel Fundamentals – BPO Track', skill:'Spreadsheet Analytics',   issued:'March 2026',   issuer:'SkillBridge PH × Concentrix', color:C.teal,    credlyUrl:false },
+];
+const UPCOMING = [
+  { name:'SQL Fundamentals Badge',            status:'In Progress', pct:20, issuer:'SkillBridge PH × Accenture', color:C.sky    },
+  { name:'Google Data Analytics Certificate', status:'Locked',      pct:0,  issuer:'SkillBridge PH × Google',    color:'#9CA3AF'},
+  { name:'BPO Data Analyst Capstone Badge',   status:'Locked',      pct:0,  issuer:'SkillBridge PH × DICT',      color:'#9CA3AF'},
+];
+const CredlyChip = () => (
+  <span style={{ background:'linear-gradient(135deg,#FF6B2B,#FF8C42)', color:'#fff', borderRadius:6, padding:'3px 10px', fontSize:10, fontWeight:900, letterSpacing:'.5px' }}>CREDLY VERIFIED</span>
+);
+
+function Credentials() {
+  return (
+    <div className="fade-in">
+      <PageHeader title="My Credentials" subtitle="All credentials verified and issued via Credly" right={<CredlyChip/>}/>
+      <div style={{ maxWidth:1100, margin:'0 auto', padding:'40px 40px' }}>
+        {/* Stats — big numbers only */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16, marginBottom:28 }}>
+          {[
+            { value:'2', label:'Badges Earned',  color:C.teal },
+            { value:'1', label:'In Progress',    color:C.sky  },
+            { value:'5', label:'Pathway Badges', color:C.gray },
+          ].map(s=>(
+            <Card key={s.label} style={{ padding:'22px 26px' }}>
+              <div style={{ fontSize:36, fontWeight:900, color:s.color, lineHeight:1 }}>{s.value}</div>
+              <div style={{ fontSize:12, color:C.gray, marginTop:6, fontWeight:500 }}>{s.label}</div>
+            </Card>
+          ))}
+        </div>
+
+        <SectionHeader title="Earned Credentials" subtitle="Cryptographically signed and independently verifiable"/>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:18, marginBottom:28 }}>
+          {EARNED.map((b,i)=>(
+            <Card key={i} style={{ overflow:'hidden' }}>
+              <div style={{ background:`linear-gradient(135deg,${b.color}18,${b.color}28)`, padding:'28px 24px', textAlign:'center', borderBottom:'1px solid #E2E8F0', position:'relative' }}>
+                <div style={{ position:'absolute', top:12, right:14 }}><CredlyChip/></div>
+                {/* Initial letter as visual anchor — no image icon */}
+                <div style={{ width:64, height:64, borderRadius:'50%', background:b.color, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px', boxShadow:`0 0 0 6px ${b.color}22`, color:'#fff', fontSize:26, fontWeight:900 }}>
+                  {b.name[0]}
+                </div>
+                <div style={{ fontWeight:800, fontSize:15, color:'#111827', marginBottom:4 }}>{b.name}</div>
+                <div style={{ fontSize:12, color:C.gray, marginBottom:10 }}>{b.skill}</div>
+                <Tag color={C.teal} bg={C.tealLt} border="#A7F3D0">Verified by Credly</Tag>
+              </div>
+              <div style={{ padding:'16px 20px' }}>
+                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:14 }}>
+                  <div>
+                    <div style={{ fontSize:10, color:'#9CA3AF', fontWeight:700, textTransform:'uppercase', letterSpacing:'.6px' }}>Issued by</div>
+                    <div style={{ fontSize:13, fontWeight:700, color:'#111827', marginTop:3 }}>{b.issuer}</div>
+                  </div>
+                  <div style={{ textAlign:'right' }}>
+                    <div style={{ fontSize:10, color:'#9CA3AF', fontWeight:700, textTransform:'uppercase', letterSpacing:'.6px' }}>Date Issued</div>
+                    <div style={{ fontSize:13, fontWeight:700, color:'#111827', marginTop:3 }}>{b.issued}</div>
+                  </div>
+                </div>
+                <div style={{ display:'flex', gap:8 }}>
+                  <button className="btn" style={{ flex:1, background:b.color, color:'#fff', border:'none', borderRadius:9, padding:'10px', fontSize:12, fontWeight:700 }}>Share Badge</button>
+                  {b.credlyUrl && <button className="btn" style={{ flex:1, background:'#fff', color:'#374151', border:'1.5px solid #E2E8F0', borderRadius:9, padding:'10px', fontSize:12, fontWeight:700 }}>View on Credly ↗</button>}
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        <SectionHeader title="Upcoming Credentials" subtitle="Complete the corresponding modules to unlock"/>
+        <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:24 }}>
+          {UPCOMING.map((b,i)=>(
+            <div key={i} style={{ background:b.status==='In Progress'?C.skyLt:'#F9FAFB', border:`1.5px solid ${b.status==='In Progress'?'#BFDBFE':'#E5E7EB'}`, borderRadius:12, padding:'16px 20px', display:'flex', alignItems:'center', gap:16, opacity:b.status==='Locked'?.55:1 }}>
+              {/* Numbered block — position + color signal status */}
+              <div style={{ width:42, height:42, borderRadius:10, background:b.status==='In Progress'?C.skyLt:'#F3F4F6', border:`2px solid ${b.color}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:15, fontWeight:900, color:b.color }}>
+                {i+1}
+              </div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontWeight:700, fontSize:14, color:'#111827' }}>{b.name}</div>
+                <div style={{ fontSize:12, color:C.gray, marginTop:2 }}>{b.issuer}</div>
+                {b.status==='In Progress' && (
+                  <>
+                    <div style={{ marginTop:8 }}><Bar pct={b.pct} color={C.sky} h={6} bg="#DBEAFE"/></div>
+                    <div style={{ fontSize:12, fontWeight:800, color:C.sky, marginTop:4 }}>{b.pct}% complete</div>
+                  </>
+                )}
+              </div>
+              <Tag color={b.status==='In Progress'?C.sky:'#9CA3AF'} bg={b.status==='In Progress'?C.skyLt:'#F3F4F6'}>
+                {b.status==='In Progress'?'In Progress':'Locked'}
+              </Tag>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ background:`${C.navy}05`, border:`1px solid ${C.navy}12`, borderRadius:12, padding:'16px 20px' }}>
+          <p style={{ fontSize:12, color:'#4B5563', lineHeight:1.7 }}>
+            <strong style={{ color:C.navy }}>Credentials are cryptographically secured and independently verifiable.</strong> Any employer can verify in under 10 seconds. Recognized by TESDA, DICT, and 60+ partner companies across the Philippines.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══ SCREEN 5 — JOB MATCHES ══ */
+const JOBS = [
+  { role:'Junior Data Analyst',         company:'Concentrix',      location:'Davao City',    match:78, type:'Full-time', work:'On-site', matchColor:C.teal,   certs:[{name:'Google IT Support',done:true},{name:'SQL Fundamentals Badge',done:false,partial:true}], salary:'₱35K–₱45K/mo', posted:'2 days ago', btnC:C.teal,   hot:true  },
+  { role:'Data Operations Associate',   company:'Teleperformance', location:'Taguig, Manila', match:65, type:'Full-time', work:'Hybrid',  matchColor:C.sky,    certs:[{name:'Google IT Support',done:true},{name:'Excel Fundamentals',done:true}],                  salary:'₱28K–₱38K/mo', posted:'5 days ago', btnC:C.sky,    hot:false },
+  { role:'Analytics Support Specialist',company:'Accenture',       location:'Cebu City',     match:60, type:'Full-time', work:'On-site', matchColor:C.purple, certs:[{name:'Google IT Support',done:true},{name:'SQL Fundamentals Badge',done:false}],              salary:'₱30K–₱40K/mo', posted:'1 week ago', btnC:C.purple, hot:false },
+];
+
+function JobMatches() {
+  return (
+    <div className="fade-in">
+      <PageHeader title="Job Matches" subtitle="Updated in real-time as you earn credentials"/>
+      <div style={{ maxWidth:1100, margin:'0 auto', padding:'40px 40px' }}>
+
+        <div style={{ borderLeft:`4px solid ${C.teal}`, background:C.tealLt, borderRadius:'0 12px 12px 0', padding:'13px 18px', marginBottom:24, display:'flex', alignItems:'center', gap:12 }}>
+          <p style={{ flex:1, fontSize:13, color:'#065F46', fontWeight:600 }}>
+            Earn your <strong>SQL Fundamentals Badge</strong> to unlock <strong>12 more matches</strong> and push your top score from <strong>78% → 91%</strong>.
+          </p>
+          <button className="btn" style={{ flexShrink:0, background:C.teal, color:'#fff', border:'none', borderRadius:8, padding:'8px 16px', fontSize:12, fontWeight:700 }}>Continue M2 →</button>
+        </div>
+
+        <SectionHeader title="Roles You Are Now Qualified For" subtitle={`${JOBS.length} matches based on your credentials and skill profile`}
+          action={
+            <div style={{ display:'flex', gap:8 }}>
+              {['All Roles','Top Matches','Hybrid/Remote'].map((f,i)=>(
+                <button key={f} className="btn" style={{ background:i===0?C.navy:'#fff', color:i===0?'#fff':C.gray, border:`1px solid ${i===0?C.navy:'#E2E8F0'}`, borderRadius:8, padding:'7px 14px', fontSize:12, fontWeight:600 }}>{f}</button>
+              ))}
+            </div>
+          }
+        />
+
+        <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+          {JOBS.map((j,i)=>(
+            <Card key={i} style={{ padding:0, overflow:'hidden', border:i===0?`2px solid ${C.teal}`:'1px solid #E2E8F0' }}>
+              <div style={{ display:'flex', alignItems:'stretch' }}>
+                {/* Match score — large colored number is the anchor */}
+                <div style={{ width:96, background:`${j.matchColor}09`, borderRight:`1px solid ${j.matchColor}18`, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'20px 0', flexShrink:0 }}>
+                  <Ring pct={j.match} size={66} stroke={7} color={j.matchColor}>
+                    <div style={{ textAlign:'center' }}>
+                      <div style={{ fontSize:15, fontWeight:900, color:j.matchColor, lineHeight:1 }}>{j.match}%</div>
+                      <div style={{ fontSize:8, color:C.gray, fontWeight:700, letterSpacing:'.5px' }}>MATCH</div>
+                    </div>
+                  </Ring>
+                  {j.hot && <div style={{ marginTop:8 }}><Tag color={C.teal} bg={C.tealLt}>Top</Tag></div>}
+                </div>
+
+                <div style={{ flex:1, padding:'20px 24px' }}>
+                  <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:14 }}>
+                    <div style={{ flex:1 }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', marginBottom:5 }}>
+                        <h3 style={{ fontSize:16, fontWeight:800, color:'#111827' }}>{j.role}</h3>
+                        {j.hot && <Tag color={C.teal} bg={C.tealLt} border="#A7F3D0">Best Match</Tag>}
+                      </div>
+                      <div style={{ display:'flex', gap:16, flexWrap:'wrap', fontSize:12, color:C.gray, marginBottom:14 }}>
+                        <strong style={{ color:C.navy }}>{j.company}</strong>
+                        <span>{j.location}</span>
+                        <span>{j.type}</span>
+                        <span>{j.work}</span>
+                        <strong style={{ color:'#111827' }}>{j.salary}</strong>
+                        <span style={{ color:'#9CA3AF' }}>Posted {j.posted}</span>
+                      </div>
+                      <div style={{ fontSize:11, color:C.gray, fontWeight:700, marginBottom:8, textTransform:'uppercase', letterSpacing:'.4px' }}>Required Credentials</div>
+                      <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                        {j.certs.map((c,ci)=>(
+                          <div key={ci} style={{ display:'flex', alignItems:'center', gap:6, background:c.done?C.greenLt:c.partial?C.skyLt:'#F3F4F6', border:`1px solid ${c.done?'#A7F3D0':c.partial?'#BFDBFE':'#E5E7EB'}`, borderRadius:7, padding:'5px 12px', fontSize:11, fontWeight:700, color:c.done?C.green:c.partial?C.sky:'#9CA3AF' }}>
+                            <span style={{ fontWeight:900, fontSize:12 }}>{c.done?'✓':c.partial?'½':'—'}</span>
+                            {c.name}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ flexShrink:0, display:'flex', flexDirection:'column', gap:8, alignItems:'flex-end' }}>
+                      <button className="btn" style={{ background:j.btnC, color:'#fff', border:'none', borderRadius:9, padding:'11px 22px', fontSize:13, fontWeight:700, whiteSpace:'nowrap' }}>Apply Now →</button>
+                      <button className="btn" style={{ background:'transparent', border:`1.5px solid ${j.btnC}30`, color:j.btnC, borderRadius:9, padding:'9px 18px', fontSize:12, fontWeight:600, whiteSpace:'nowrap' }}>Save Job</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        <div style={{ marginTop:24, textAlign:'center', padding:'32px 24px', border:'2px dashed #E2E8F0', borderRadius:14, background:'#FAFAFA' }}>
+          <div style={{ fontSize:40, fontWeight:900, color:'#D1D5DB', lineHeight:1, marginBottom:8 }}>+12</div>
+          <div style={{ fontWeight:700, color:'#374151', fontSize:15 }}>more jobs unlock with the SQL Fundamentals Badge</div>
+          <div style={{ color:C.gray, fontSize:13, marginTop:4 }}>Roles at Telus International, iQor, and TTEC Philippines are waiting for you.</div>
+          <button className="btn" style={{ marginTop:16, background:C.navy, color:'#fff', border:'none', borderRadius:9, padding:'11px 26px', fontSize:13, fontWeight:700 }}>Continue Learning to Unlock →</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══ SCREEN 6 — PROFILE ══ */
+function Profile({ onNav }) {
+  return (
+    <div className="fade-in">
+      <PageHeader title="My Profile" subtitle="Maria Reyes · BPO Career Upskilling"/>
+      <div style={{ maxWidth:760, margin:'0 auto', padding:'40px 40px' }}>
+        <Card style={{ padding:30, marginBottom:18 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:20, marginBottom:26 }}>
+            <Avatar initials="MR" size={80} bg={C.teal} fs={26}/>
+            <div>
+              <div style={{ fontSize:22, fontWeight:900, color:'#111827' }}>Maria Reyes</div>
+              <div style={{ fontSize:14, color:C.gray, marginTop:2 }}>Customer Service Agent · Concentrix Manila</div>
+              <div style={{ display:'flex', gap:8, marginTop:10 }}>
+                <Tag color={C.teal} bg={C.tealLt} border="#A7F3D0">Credly Connected</Tag>
+                <Tag color={C.sky} bg={C.skyLt} border="#BFDBFE">TESDA Registered</Tag>
+              </div>
+            </div>
+            <button className="btn" style={{ marginLeft:'auto', background:C.navy, color:'#fff', border:'none', borderRadius:9, padding:'10px 20px', fontSize:13, fontWeight:700 }}>Edit Profile</button>
+          </div>
+          {[
+            ['Full Name','Maria Santos Reyes'],['Email','maria.reyes@skillbridgeph.com'],
+            ['BPO Company','Concentrix Manila (BGC)'],['Work Experience','3 years in Customer Service'],
+            ['Education','BS Business Administration – FEU Manila, 2021'],['Location','Quezon City, Metro Manila'],
+            ['SkillBridge Level','Level 3 — Intermediate Upskiller'],
+          ].map(([k,v])=>(
+            <div key={k} style={{ display:'flex', borderBottom:'1px solid #F3F4F6', padding:'12px 0', gap:16 }}>
+              <div style={{ width:180, fontSize:12, color:'#9CA3AF', fontWeight:600 }}>{k}</div>
+              <div style={{ flex:1, fontSize:13, fontWeight:600, color:'#374151' }}>{v}</div>
+            </div>
+          ))}
+        </Card>
+        <div style={{ display:'flex', gap:12 }}>
+          <button onClick={()=>onNav('settings')} className="btn" style={{ background:'#fff', color:C.navy, border:`1.5px solid #E2E8F0`, borderRadius:9, padding:'10px 20px', fontSize:13, fontWeight:700 }}>Settings</button>
+          <button className="btn" style={{ background:C.teal, color:'#fff', border:'none', borderRadius:9, padding:'10px 20px', fontSize:13, fontWeight:700 }}>Export Profile</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══ SCREEN 7 — SETTINGS ══ */
+function Settings() {
+  const [notif,setNotif]=useState(true), [remind,setRemind]=useState(true), [credly,setCredy]=useState(true);
+  const Toggle=({on,onToggle})=>(
+    <div onClick={onToggle} style={{ width:44, height:24, borderRadius:99, background:on?C.teal:'#E5E7EB', cursor:'pointer', position:'relative', transition:'background .2s', flexShrink:0 }}>
+      <div style={{ position:'absolute', top:3, left:on?23:3, width:18, height:18, borderRadius:'50%', background:'#fff', boxShadow:'0 1px 3px rgba(0,0,0,.2)', transition:'left .2s' }}/>
+    </div>
+  );
+  return (
+    <div className="fade-in">
+      <PageHeader title="Settings" subtitle="Manage your SkillBridge PH preferences"/>
+      <div style={{ maxWidth:680, margin:'0 auto', padding:'40px 40px' }}>
+        {[
+          { title:'Notifications', items:[
+            { label:'Push Notifications', sub:'Module reminders, checkpoint alerts', on:notif, set:setNotif },
+            { label:'Daily Learning Reminders', sub:'Get reminded to hit your daily goal', on:remind, set:setRemind },
+          ]},
+          { title:'Integrations', items:[
+            { label:'Credly Badge Sync', sub:'Auto-sync earned badges to your Credly profile', on:credly, set:setCredy },
+          ]},
+        ].map(g=>(
+          <Card key={g.title} style={{ padding:24, marginBottom:16 }} hover={false}>
+            <div style={{ fontWeight:800, color:'#111827', fontSize:14, marginBottom:16 }}>{g.title}</div>
+            {g.items.map(item=>(
+              <div key={item.label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 0', borderBottom:'1px solid #F3F4F6', gap:12 }}>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:600, color:'#374151' }}>{item.label}</div>
+                  <div style={{ fontSize:11, color:'#9CA3AF', marginTop:2 }}>{item.sub}</div>
+                </div>
+                <Toggle on={item.on} onToggle={()=>item.set(v=>!v)}/>
+              </div>
+            ))}
+          </Card>
+        ))}
+        <Card style={{ padding:24 }} hover={false}>
+          <div style={{ fontWeight:800, color:'#111827', fontSize:14, marginBottom:16 }}>Account</div>
+          {['Change Password','Export My Data','Delete Account'].map((a,i)=>(
+            <button key={a} className="btn" style={{ display:'block', width:'100%', textAlign:'left', background:'transparent', border:'none', borderBottom:i<2?'1px solid #F3F4F6':'none', padding:'12px 0', fontSize:13, fontWeight:600, color:i===2?C.red:'#374151', fontFamily:'inherit' }}>{a} →</button>
+          ))}
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+/* ══ APP ROOT ══ */
+function App() {
+  const [screen,setScreen]=useState('dashboard');
+  const SCREENS={
+    dashboard:<Dashboard/>, careermap:<CareerMap/>, modules:<LearningModules/>,
+    credentials:<Credentials/>, jobs:<JobMatches/>, profile:<Profile onNav={setScreen}/>, settings:<Settings/>,
+  };
+  return (
+    <div style={{ display:'flex', flexDirection:'column', minHeight:'100vh', fontFamily:"'Inter', system-ui, sans-serif" }}>
+      <TopNav active={screen} onNav={setScreen}/>
+      <main style={{ flex:1, overflowY:'auto', background:C.bg }}>{SCREENS[screen]||<Dashboard/>}</main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
