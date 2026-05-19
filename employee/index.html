@@ -26,6 +26,35 @@
     .btn:hover { filter: brightness(1.06); }
     .btn:active { transform: scale(.97); }
     .nav-link { transition: color .15s; }
+
+    /* ── Mobile responsive ── */
+    .r-page    { padding: 56px 40px 60px; }
+    .r-page-sm { padding: 40px 40px; }
+    .r-ph      { padding: 20px 40px; }
+    .r-grid-2  { display: grid; grid-template-columns: 1fr 1.35fr; gap: 24px; margin-bottom: 24px; }
+    .r-grid-2b { display: grid; grid-template-columns: 1.6fr 1fr; gap: 24px; }
+    .r-grid-2c { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 28px; }
+    .r-grid-3  { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 28px; }
+    .r-nav     { display: flex; align-items: center; padding: 0 40px; height: 60px; max-width: 1280px; margin: 0 auto; width: 100%; }
+    .r-navlinks { display: flex; align-items: center; gap: 2px; }
+    .r-navright { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+    .r-hero-h1  { font-size: 52px; }
+
+    @media (max-width: 768px) {
+      .r-page    { padding: 24px 16px 32px; }
+      .r-page-sm { padding: 20px 16px; }
+      .r-ph      { padding: 14px 16px; flex-wrap: wrap; }
+      .r-grid-2  { grid-template-columns: 1fr; }
+      .r-grid-2b { grid-template-columns: 1fr; }
+      .r-grid-2c { grid-template-columns: 1fr; }
+      .r-grid-3  { grid-template-columns: 1fr; }
+      .r-nav     { padding: 0 16px; }
+      .r-navlinks { display: none; }
+      .r-navright { display: none; }
+      .r-hero-h1  { font-size: 30px; letter-spacing: -.4px; }
+      .r-mob-nav  { display: flex !important; }
+    }
+    .r-mob-nav { display: none; }
   </style>
 </head>
 <body>
@@ -117,9 +146,9 @@ const NAV = [
 function TopNav({ active, onNav }) {
   return (
     <nav style={{ background:'#fff', borderBottom:'1px solid #E2E8F0', position:'sticky', top:0, zIndex:40, boxShadow:'0 1px 4px rgba(0,0,0,.05)' }}>
-      <div style={{ display:'flex', alignItems:'center', padding:'0 40px', height:60, maxWidth:1280, margin:'0 auto', width:'100%' }}>
+      <div className="r-nav">
         <div style={{ flexShrink:0, marginRight:'auto' }}><Logo/></div>
-        <div style={{ display:'flex', alignItems:'center', gap:2 }}>
+        <div className="r-navlinks">
           {NAV.map(n => {
             const on = active===n.id;
             return (
@@ -130,7 +159,7 @@ function TopNav({ active, onNav }) {
             );
           })}
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:12, marginLeft:'auto' }}>
+        <div className="r-navright">
           {/* Home link */}
           <a href="../index.html" className="btn" style={{ padding:'6px 14px', borderRadius:8, background:'#F8FAFC', border:'1px solid #E2E8F0', fontSize:12, fontWeight:700, color:C.gray, textDecoration:'none' }}>
             ← Home
@@ -144,13 +173,30 @@ function TopNav({ active, onNav }) {
             MR
           </button>
         </div>
+        {/* Mobile: avatar + home only */}
+        <div className="r-mob-nav" style={{ alignItems:'center', gap:10, marginLeft:'auto' }}>
+          <a href="../index.html" className="btn" style={{ padding:'6px 12px', borderRadius:8, background:'#F8FAFC', border:'1px solid #E2E8F0', fontSize:12, fontWeight:700, color:C.gray, textDecoration:'none' }}>← Home</a>
+          <button onClick={()=>onNav('profile')} className="btn" style={{ width:34, height:34, borderRadius:'50%', background:C.teal, border:'none', color:'#fff', fontWeight:800, fontSize:12 }}>MR</button>
+        </div>
+      </div>
+      {/* Mobile bottom tab bar */}
+      <div className="r-mob-nav" style={{ borderTop:'1px solid #E2E8F0', overflowX:'auto', WebkitOverflowScrolling:'touch' }}>
+        {NAV.map(n => {
+          const on = active===n.id;
+          return (
+            <button key={n.id} onClick={()=>onNav(n.id)} className="btn"
+              style={{ flex:'0 0 auto', padding:'10px 16px', border:'none', borderTop: on?`2.5px solid ${C.teal}`:'2.5px solid transparent', background:'transparent', color:on?C.navy:'#6B7280', fontWeight:on?700:500, fontSize:12, fontFamily:'inherit', whiteSpace:'nowrap' }}>
+              {n.label}
+            </button>
+          );
+        })}
       </div>
     </nav>
   );
 }
 
 const PageHeader = ({ title, subtitle, right }) => (
-  <div style={{ background:'#fff', borderBottom:'1px solid #E2E8F0', padding:'20px 40px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+  <div className="r-ph" style={{ background:'#fff', borderBottom:'1px solid #E2E8F0', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
     <div>
       <div style={{ fontSize:20, fontWeight:800, color:'#111827', letterSpacing:'-.3px' }}>{title}</div>
       {subtitle && <div style={{ fontSize:12, color:C.gray, marginTop:3 }}>{subtitle}</div>}
@@ -172,11 +218,11 @@ const COMPETENCIES = [
 function Dashboard() {
   return (
     <div className="fade-in">
-      <div style={{ maxWidth:1100, margin:'0 auto', padding:'56px 40px 60px' }}>
+      <div className="r-page" style={{ maxWidth:1100, margin:'0 auto' }}>
 
         {/* HERO — pure typography, no icons */}
         <div style={{ textAlign:'center', marginBottom:44 }}>
-          <h1 style={{ fontFamily:"'DM Serif Display', Georgia, serif", fontSize:52, fontWeight:400, color:'#111827', letterSpacing:'-.8px', lineHeight:1.15, marginBottom:14 }}>
+          <h1 className="r-hero-h1" style={{ fontFamily:"'DM Serif Display', Georgia, serif", fontWeight:400, color:'#111827', letterSpacing:'-.8px', lineHeight:1.15, marginBottom:14 }}>
             Maligayang pagdating, Maria!
           </h1>
           <p style={{ fontSize:17, color:C.gray, marginBottom:28, lineHeight:1.6 }}>
@@ -208,7 +254,7 @@ function Dashboard() {
         </div>
 
         {/* MAIN CARDS */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1.35fr', gap:24, marginBottom:24 }}>
+        <div className="r-grid-2" style={{ }}>
 
           <Card style={{ padding:30 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
@@ -286,7 +332,7 @@ function Dashboard() {
         </div>
 
         {/* BOTTOM ROW */}
-        <div style={{ display:'grid', gridTemplateColumns:'1.6fr 1fr', gap:24 }}>
+        <div className="r-grid-2b" style={{ }}>
           <Card style={{ padding:26 }}>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
@@ -375,7 +421,7 @@ function CareerMap() {
   return (
     <div className="fade-in">
       <PageHeader title="Career Map" subtitle="AI-generated pathways based on your skill profile and imported certifications"/>
-      <div style={{ maxWidth:1100, margin:'0 auto', padding:'40px 40px' }}>
+      <div className="r-page-sm" style={{ maxWidth:1100, margin:'0 auto' }}>
         <div style={{ borderLeft:`4px solid ${C.teal}`, background:'#F8FFFE', borderRadius:'0 12px 12px 0', padding:'14px 20px', marginBottom:28, display:'flex', alignItems:'center', justifyContent:'space-between', gap:16 }}>
           <div style={{ flex:1 }}>
             <div style={{ fontWeight:800, fontSize:13, color:'#111827', marginBottom:2 }}>
@@ -474,7 +520,7 @@ function LearningModules() {
   return (
     <div className="fade-in">
       <PageHeader title="Learning Modules" subtitle="Customer Service Agent → Data Analyst"/>
-      <div style={{ maxWidth:1100, margin:'0 auto', padding:'40px 40px' }}>
+      <div className="r-page-sm" style={{ maxWidth:1100, margin:'0 auto' }}>
         <Card style={{ padding:'20px 26px', marginBottom:20 }} hover={false}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
             <div>
@@ -585,9 +631,9 @@ function Credentials() {
   return (
     <div className="fade-in">
       <PageHeader title="My Credentials" subtitle="All credentials verified and issued via Credly" right={<CredlyChip/>}/>
-      <div style={{ maxWidth:1100, margin:'0 auto', padding:'40px 40px' }}>
+      <div className="r-page-sm" style={{ maxWidth:1100, margin:'0 auto' }}>
         {/* Stats — big numbers only */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16, marginBottom:28 }}>
+        <div className="r-grid-3" style={{ }}>
           {[
             { value:'2', label:'Badges Earned',  color:C.teal },
             { value:'1', label:'In Progress',    color:C.sky  },
@@ -601,7 +647,7 @@ function Credentials() {
         </div>
 
         <SectionHeader title="Earned Credentials" subtitle="Cryptographically signed and independently verifiable"/>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:18, marginBottom:28 }}>
+        <div className="r-grid-2c" style={{ }}>
           {EARNED.map((b,i)=>(
             <Card key={i} style={{ overflow:'hidden' }}>
               <div style={{ background:`linear-gradient(135deg,${b.color}18,${b.color}28)`, padding:'28px 24px', textAlign:'center', borderBottom:'1px solid #E2E8F0', position:'relative' }}>
@@ -680,7 +726,7 @@ function JobMatches() {
   return (
     <div className="fade-in">
       <PageHeader title="Job Matches" subtitle="Updated in real-time as you earn credentials"/>
-      <div style={{ maxWidth:1100, margin:'0 auto', padding:'40px 40px' }}>
+      <div className="r-page-sm" style={{ maxWidth:1100, margin:'0 auto' }}>
 
         <div style={{ borderLeft:`4px solid ${C.teal}`, background:C.tealLt, borderRadius:'0 12px 12px 0', padding:'13px 18px', marginBottom:24, display:'flex', alignItems:'center', gap:12 }}>
           <p style={{ flex:1, fontSize:13, color:'#065F46', fontWeight:600 }}>
@@ -766,7 +812,7 @@ function Profile({ onNav }) {
   return (
     <div className="fade-in">
       <PageHeader title="My Profile" subtitle="Maria Reyes · BPO Career Upskilling"/>
-      <div style={{ maxWidth:760, margin:'0 auto', padding:'40px 40px' }}>
+      <div className="r-page-sm" style={{ maxWidth:760, margin:'0 auto' }}>
         <Card style={{ padding:30, marginBottom:18 }}>
           <div style={{ display:'flex', alignItems:'center', gap:20, marginBottom:26 }}>
             <Avatar initials="MR" size={80} bg={C.teal} fs={26}/>
@@ -812,7 +858,7 @@ function Settings() {
   return (
     <div className="fade-in">
       <PageHeader title="Settings" subtitle="Manage your SkillBridge PH preferences"/>
-      <div style={{ maxWidth:680, margin:'0 auto', padding:'40px 40px' }}>
+      <div className="r-page-sm" style={{ maxWidth:680, margin:'0 auto' }}>
         {[
           { title:'Notifications', items:[
             { label:'Push Notifications', sub:'Module reminders, checkpoint alerts', on:notif, set:setNotif },
